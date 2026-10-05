@@ -6,7 +6,7 @@ Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu dep
 
 Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres (l'ISS, Tiangong et Hubble) et des trains Starlink. Les éléments orbitaux viennent de deux groupes CelesTrak, téléchargés au besoin et gardés deux heures en cache chacun : « visual » pour les satellites célèbres, « last-30-days » pour les Starlink lancés dans les 30 derniers jours. Si un groupe est injoignable et sans cache, l'autre continue d'être annoncé. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage. Les Starlink d'un même lancement qui défilent en file sur le même chemin le sont aussi, sous le nom « Train Starlink (N satellites) » : c'est la file de points que l'on prend pour des OVNI.
 
-À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi le satellite qui était là : c'est « C'était quoi, ça ? ».
+À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi ce qui était là : c'est « C'était quoi, ça ? ». Il cherche d'abord parmi les satellites suivis, trains Starlink compris, puis parmi les planètes brillantes que l'on prend souvent pour un satellite ou un avion : Vénus, Jupiter, Mars et Saturne. Une planète est candidate si elle était au-dessus de l'horizon, dans un ciel assez sombre (Soleil à −6° ou moins), dans la direction indiquée ou une direction voisine ; les planètes sont classées de la plus proche à la plus éloignée de cette direction, après les satellites. Leurs positions sont calculées hors ligne avec les éphémérides DE421 embarquées.
 
 Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir » et « C'était quoi ? », appuyée sur une API HTTP.
 
@@ -31,7 +31,7 @@ Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur P
 |---|---|
 | `GET /` | La page web |
 | `GET /api/passes?latitude=&longitude=&hours=12` | Les passages visibles des prochaines heures (1 à 48) |
-| `GET /api/identification?latitude=&longitude=&at=&direction=` | « C'était quoi, ça ? » : `at` en ISO 8601 avec fuseau, `direction` parmi N, NE, E, SE, S, SW, W, NW |
+| `GET /api/identification?latitude=&longitude=&at=&direction=` | « C'était quoi, ça ? » : `at` en ISO 8601 avec fuseau, `direction` parmi N, NE, E, SE, S, SW, W, NW. Chaque candidat porte un `kind` : `satellite`, `train` ou `planet` |
 
 ## Architecture
 
@@ -41,7 +41,7 @@ Clean Architecture : les dépendances pointent vers le domaine, jamais l'inverse
 src/la_haut/
 ├── domain/          règles métier pures, aucune dépendance technique
 ├── application/     cas d'usage et ports (typing.Protocol)
-├── infrastructure/  adaptateurs : Skyfield, fichier TLE, téléchargement CelesTrak
+├── infrastructure/  adaptateurs : Skyfield (satellites et planètes), fichier TLE, téléchargement CelesTrak
 ├── interface/       API HTTP (FastAPI) et page web, branchées sur les cas d'usage seulement
 └── composition.py   racine de composition : branche les adaptateurs sur les cas d'usage
 ```
@@ -69,6 +69,11 @@ src/la_haut/
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
 | Catalogue combiné | `CombinedSatelliteCatalog` | Plusieurs catalogues réunis, chaque numéro NORAD une seule fois ; un catalogue indisponible n'empêche pas d'annoncer les autres |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
+| Planète | `Planet` | Vénus, Jupiter, Mars ou Saturne : les planètes brillantes que l'on prend pour un satellite ou un avion |
+| Position d'une planète | `PlanetPosition` | Où se trouve une planète dans le ciel de l'observateur à un instant, avec la hauteur du Soleil |
+| Écart à la direction | `PlanetPosition.angle_to`, `CompassPoint.azimuth_deg` | Angle entre la planète et le milieu de la direction signalée ; aucun si elle était sous l'horizon, dans un ciel trop clair ou ailleurs |
+| Localisateur de planètes | `PlanetLocator` | Port : la position d'une planète vue par l'observateur à un instant |
+| Candidat | `SightingIdentification` | Ce que propose « C'était quoi, ça ? » : un passage (satellite ou train Starlink) ou une planète, les satellites d'abord |
 
 ## Tests
 
@@ -94,5 +99,7 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 - Seuls les satellites célèbres et les Starlink récents sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
 - Un Starlink isolé lancé dans les 30 derniers jours est annoncé sous son nom de catalogue, sans savoir s'il est réellement assez brillant.
 - Suivre quelques centaines de Starlink sur 12 heures prend plusieurs secondes de calcul (environ 5 s pour 200 satellites sur un poste de développement) : l'onglet « Ce soir » peut être lent sur un petit serveur.
-- « C'était quoi, ça ? » ne reconnaît que les satellites célèbres : un avion, une étoile ou une planète donnent « aucun satellite connu ». L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé.
+- « C'était quoi, ça ? » reconnaît les satellites suivis, les trains Starlink et quatre planètes. Un avion ou une étoile donnent « ni satellite ni planète ». Mercure, la Lune et les étoiles brillantes ne sont pas proposées.
+- L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé : une file de points vue au même endroit qu'une planète donne d'abord le satellite, puis la planète.
+- Une planète est proposée dès que le Soleil est à −6° ou moins, même si Vénus se voit parfois plus tôt au crépuscule.
 - Le JavaScript de la page n'a pas de tests automatisés : sa logique est volontairement réduite à l'affichage, le reste est testé côté Python.
