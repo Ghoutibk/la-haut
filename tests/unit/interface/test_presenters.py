@@ -1,3 +1,5 @@
+import pytest
+
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.interface.http.presenters import present_pass
 from tests.support.builders import DEFAULT_INSTANT, ONE_MINUTE, a_visible_pass
@@ -41,3 +43,19 @@ def test_every_compass_point_has_a_french_name():
     }
 
     assert len(names) == len(CompassPoint)
+
+
+@pytest.mark.parametrize(
+    ("catalog_name", "public_name"),
+    [
+        ("ISS (ZARYA)", "Station spatiale internationale"),
+        ("CSS (TIANHE)", "Station spatiale chinoise Tiangong"),
+        ("HST", "Télescope spatial Hubble"),
+    ],
+)
+def test_famous_satellites_are_presented_under_their_public_name(catalog_name, public_name):
+    assert present_pass(a_visible_pass(satellite_name=catalog_name))["name"] == public_name
+
+
+def test_another_satellite_keeps_its_catalog_name():
+    assert present_pass(a_visible_pass(satellite_name="SL-16 R/B"))["name"] == "SL-16 R/B"

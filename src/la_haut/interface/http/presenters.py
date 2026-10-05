@@ -14,6 +14,12 @@ FRENCH_COMPASS_NAMES = {
     CompassPoint.NORTH_WEST: "nord-ouest",
 }
 
+PUBLIC_NAMES = {
+    "ISS (ZARYA)": "Station spatiale internationale",
+    "CSS (TIANHE)": "Station spatiale chinoise Tiangong",
+    "HST": "Télescope spatial Hubble",
+}
+
 
 def _present_direction(point: CompassPoint) -> dict[str, str]:
     return {"code": point.value, "label": FRENCH_COMPASS_NAMES[point]}
@@ -21,6 +27,7 @@ def _present_direction(point: CompassPoint) -> dict[str, str]:
 
 def present_pass(visible_pass: VisiblePass) -> dict:
     return {
+        "name": PUBLIC_NAMES.get(visible_pass.satellite_name, visible_pass.satellite_name),
         "satellite": visible_pass.satellite_name,
         "docked_with": list(visible_pass.docked_with),
         "starts_at": visible_pass.starts_at.isoformat(),
