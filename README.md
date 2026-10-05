@@ -4,7 +4,7 @@ Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu dep
 
 ## Ce que fait Là-haut aujourd'hui
 
-Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites les plus brillants. Le catalogue est le groupe « visual » de CelesTrak (environ 150 satellites), téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
+Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres : l'ISS, Tiangong et Hubble. Leurs éléments orbitaux viennent du groupe « visual » de CelesTrak, téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
 
 ## Démarrer
 
@@ -39,6 +39,7 @@ src/la_haut/
 | Point cardinal | `CompassPoint` | Une des huit directions de la rose des vents |
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
+| Satellite célèbre | `is_famous`, `FamousSatelliteCatalog` | ISS, Tiangong ou Hubble, reconnus à leur numéro NORAD : les seuls annoncés pour l'instant |
 | Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
@@ -64,6 +65,6 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 
 ## Limites connues
 
-- La luminosité vient du choix du catalogue (les satellites les plus brillants), pas encore d'un calcul de magnitude passage par passage.
+- Seuls les satellites célèbres sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
 - Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
 - L'identification « c'était quoi ? », l'API et l'interface viendront dans les prochaines tranches.
