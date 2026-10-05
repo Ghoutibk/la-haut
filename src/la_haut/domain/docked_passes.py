@@ -14,6 +14,8 @@ def _on_the_same_path(first: VisiblePass, second: VisiblePass) -> bool:
         and abs(first.ends_at - second.ends_at) <= SAME_PATH_TIME_TOLERANCE
         and abs(first.max_elevation_deg - second.max_elevation_deg)
         <= SAME_PATH_ELEVATION_TOLERANCE_DEG
+        and first.appears_in.is_close_to(second.appears_in)
+        and first.vanishes_in.is_close_to(second.vanishes_in)
     )
 
 
