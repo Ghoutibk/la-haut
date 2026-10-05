@@ -1,8 +1,10 @@
+import math
 from datetime import datetime, timedelta
 
 from skyfield.api import EarthSatellite, Loader, wgs84
 from skyfield_data import get_skyfield_data_path
 
+from la_haut.domain.compass_point import FULL_TURN_DEG
 from la_haut.domain.observer import Observer
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
@@ -10,11 +12,10 @@ from la_haut.domain.time_window import TimeWindow
 
 DEFAULT_STEP = timedelta(seconds=10)
 EPHEMERIS_FILE = "de421.bsp"
-FULL_TURN_DEG = 360.0
 
 
 def _instants(window: TimeWindow, step: timedelta) -> list[datetime]:
-    count = -(-window.duration // step)  # division arrondie au supérieur
+    count = math.ceil(window.duration / step)
     return [window.starts_at + index * step for index in range(count)]
 
 
@@ -24,10 +25,9 @@ class SkyfieldSkyTracker:
     def __init__(self, step: timedelta = DEFAULT_STEP) -> None:
         load = Loader(get_skyfield_data_path(), verbose=False)
         self._timescale = load.timescale(builtin=True)
-        ephemeris = load(EPHEMERIS_FILE)
-        self._ephemeris = ephemeris
-        self._earth = ephemeris["earth"]
-        self._sun = ephemeris["sun"]
+        self._ephemeris = load(EPHEMERIS_FILE)
+        self._earth = self._ephemeris["earth"]
+        self._sun = self._ephemeris["sun"]
         self._step = step
 
     def track(
