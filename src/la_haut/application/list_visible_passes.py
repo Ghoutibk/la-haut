@@ -1,4 +1,5 @@
 from la_haut.application.ports import SatelliteCatalog, SkyTracker
+from la_haut.domain.docked_passes import merge_docked_passes
 from la_haut.domain.observer import Observer
 from la_haut.domain.pass_detection import detect_visible_passes
 from la_haut.domain.time_window import TimeWindow
@@ -29,4 +30,4 @@ class ListVisiblePasses:
                 self._visibility,
             )
         ]
-        return sorted(passes, key=lambda visible_pass: visible_pass.starts_at)
+        return sorted(merge_docked_passes(passes), key=lambda visible_pass: visible_pass.starts_at)

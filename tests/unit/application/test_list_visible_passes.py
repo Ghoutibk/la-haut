@@ -38,3 +38,17 @@ def test_each_satellite_is_tracked_for_the_given_observer_and_window():
     list_visible_passes([a_satellite("ISS")], {}, tracker=tracker)
 
     assert tracker.requests == [("ISS", an_observer_in_paris(), an_evening())]
+
+
+def test_satellites_docked_together_are_announced_as_one_pass():
+    same_track = a_track({}, {}, {})
+
+    [visible_pass] = list_visible_passes(
+        [a_satellite("CSS (TIANHE)"), a_satellite("SHENZHOU-23")],
+        {"CSS (TIANHE)": same_track, "SHENZHOU-23": same_track},
+    )
+
+    assert (visible_pass.satellite_name, visible_pass.docked_with) == (
+        "CSS (TIANHE)",
+        ("SHENZHOU-23",),
+    )
