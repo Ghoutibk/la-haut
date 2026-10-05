@@ -4,11 +4,14 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, Request
+from fastapi.responses import JSONResponse
 
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
+from la_haut.domain.sighting import InvalidSightingError, Sighting
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.presenters import present_pass
 
@@ -29,6 +32,10 @@ def create_app(
 ) -> FastAPI:
     app = FastAPI(title="Là-haut")
 
+    @app.exception_handler(InvalidSightingError)
+    def reject_invalid_sighting(_: Request, error: InvalidSightingError) -> JSONResponse:
+        return JSONResponse(status_code=422, content={"detail": str(error)})
+
     @app.get("/api/passes")
     def tonight(
         latitude: Latitude,
@@ -39,5 +46,18 @@ def create_app(
         window = TimeWindow(starts_at=now, ends_at=now + timedelta(hours=hours))
         observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
         return {"passes": [present_pass(p) for p in list_visible_passes.execute(observer, window)]}
+
+    @app.get("/api/identification")
+    def what_was_that(
+        latitude: Latitude,
+        longitude: Longitude,
+        at: datetime,
+        direction: CompassPoint,
+    ) -> dict:
+        observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
+        sighting = Sighting(at=at, direction=direction)
+        return {
+            "candidates": [present_pass(p) for p in identify_sighting.execute(observer, sighting)]
+        }
 
     return app

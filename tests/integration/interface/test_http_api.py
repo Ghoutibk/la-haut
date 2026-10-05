@@ -8,10 +8,11 @@ from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.domain.observer import Observer
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
-from tests.support.builders import DEFAULT_INSTANT, a_satellite, a_track
+from tests.support.builders import DEFAULT_INSTANT, ONE_MINUTE, a_satellite, a_track
 from tests.support.fakes import FakeSatelliteCatalog, FakeSkyTracker
 
 PARIS = {"latitude": 48.8566, "longitude": 2.3522}
+WEST = {"azimuth_deg": 270.0}
 
 
 def a_client(tracks_by_name, tracker=None):
@@ -58,5 +59,41 @@ def test_tonight_searches_the_next_twelve_hours_by_default():
 )
 def test_tonight_rejects_an_impossible_request(params):
     response = a_client({}).get("/api/passes", params=params)
+
+    assert response.status_code == 422
+
+
+def test_a_sighting_is_identified_over_http():
+    seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
+
+    response = a_client({"ISS (ZARYA)": a_track(WEST, WEST, WEST)}).get(
+        "/api/identification", params=seen
+    )
+
+    assert response.status_code == 200
+    [candidate] = response.json()["candidates"]
+    assert candidate["satellite"] == "ISS (ZARYA)"
+
+
+def test_a_sighting_matching_no_satellite_gives_no_candidate():
+    seen = {**PARIS, "at": DEFAULT_INSTANT.isoformat(), "direction": "N"}
+
+    response = a_client({"ISS (ZARYA)": a_track(WEST, WEST)}).get(
+        "/api/identification", params=seen
+    )
+
+    assert response.json() == {"candidates": []}
+
+
+@pytest.mark.parametrize(
+    "seen",
+    [
+        {**PARIS, "at": "2026-10-05T21:42:00", "direction": "W"},
+        {**PARIS, "at": DEFAULT_INSTANT.isoformat(), "direction": "WEST"},
+        {**PARIS, "direction": "W"},
+    ],
+)
+def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
+    response = a_client({}).get("/api/identification", params=seen)
 
     assert response.status_code == 422
