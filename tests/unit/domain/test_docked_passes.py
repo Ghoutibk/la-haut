@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.docked_passes import merge_docked_passes
 from tests.support.builders import ONE_MINUTE, a_visible_pass
 
@@ -53,3 +54,18 @@ def test_simultaneous_passes_at_different_heights_in_the_sky_stay_separate():
     high = a_visible_pass(satellite_name="HST", max_elevation_deg=40.0)
 
     assert merge_docked_passes([low, high]) == [low, high]
+
+
+def test_simultaneous_passes_crossing_the_sky_differently_stay_separate():
+    westward = a_visible_pass(
+        satellite_name="ISS (ZARYA)",
+        appears_in=CompassPoint.EAST,
+        vanishes_in=CompassPoint.WEST,
+    )
+    northward = a_visible_pass(
+        satellite_name="HST",
+        appears_in=CompassPoint.SOUTH,
+        vanishes_in=CompassPoint.NORTH,
+    )
+
+    assert merge_docked_passes([westward, northward]) == [westward, northward]

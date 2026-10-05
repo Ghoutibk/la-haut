@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from la_haut.application.famous_satellite_catalog import FamousSatelliteCatalog
+from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
@@ -28,3 +29,15 @@ def build_list_visible_passes_from_celestrak(
     """Les satellites célèbres, avec leurs éléments tenus à jour depuis CelesTrak."""
     brightest = CelestrakSatelliteCatalog(cache_path, base_url=base_url)
     return _list_visible_passes(FamousSatelliteCatalog(brightest))
+
+
+def build_identify_sighting(catalog_path: Path) -> IdentifySighting:
+    """« C'était quoi, ça ? » parmi les satellites d'un fichier TLE local."""
+    return IdentifySighting(build_list_visible_passes(catalog_path))
+
+
+def build_identify_sighting_from_celestrak(
+    cache_path: Path, base_url: str = CELESTRAK_GP_URL
+) -> IdentifySighting:
+    """« C'était quoi, ça ? » parmi les satellites célèbres tenus à jour depuis CelesTrak."""
+    return IdentifySighting(build_list_visible_passes_from_celestrak(cache_path, base_url))

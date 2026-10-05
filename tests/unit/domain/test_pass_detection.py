@@ -55,3 +55,11 @@ def test_a_pass_still_visible_on_the_last_sample_is_kept():
     [visible_pass] = detect(a_track(IN_SHADOW, {}, {}))
 
     assert visible_pass.ends_at == DEFAULT_INSTANT + 2 * ONE_MINUTE
+
+
+def test_a_pass_keeps_its_visible_path_through_the_sky():
+    track = a_track(IN_SHADOW, {"azimuth_deg": 200.0}, {"azimuth_deg": 150.0}, BELOW_HORIZON)
+
+    [visible_pass] = detect(track)
+
+    assert visible_pass.path == (track[1], track[2])
