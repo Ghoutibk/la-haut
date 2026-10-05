@@ -78,6 +78,9 @@ function isToday(date) {
 const TRAIN_EXPLANATION =
   "Une file de points brillants qui se suivent : les satellites Starlink d'un même lancement, quelques jours après leur mise en orbite.";
 
+const PLANET_EXPLANATION =
+  "Une planète ne bouge pas en quelques minutes : elle reste au même endroit parmi les étoiles. Si ta lumière filait dans le ciel, c'était plutôt un satellite ou un avion.";
+
 function renderPass(pass) {
   const start = new Date(pass.starts_at);
   const item = element("li", "pass");
@@ -117,13 +120,29 @@ function renderIdentification(candidates) {
   const result = $("#identify-result");
   if (!candidates.length) {
     result.replaceChildren(
-      element("p", "eyebrow", "Aucun satellite connu"),
-      element("h2", null, "Pas un satellite célèbre"),
-      element("p", null, "Rien de connu n'était dans cette direction à ce moment. C'était peut-être un avion, une étoile ou une planète."),
+      element("p", "eyebrow", "Rien de connu"),
+      element("h2", null, "Ni satellite ni planète"),
+      element("p", null, "Aucun satellite suivi ni aucune planète brillante n'était dans cette direction à ce moment. C'était peut-être un avion ou une étoile."),
     );
     return;
   }
   const [best, ...others] = candidates;
+  if (best.kind === "planet") {
+    result.replaceChildren(
+      element("p", "eyebrow", "C'était très probablement"),
+      element("h2", null, best.name),
+      element("p", null, `${best.name} brillait ${towardThe(best.direction.label)}, à ${best.elevation_deg}° au-dessus de l'horizon.`),
+      element("p", null, PLANET_EXPLANATION),
+    );
+  } else {
+    renderPassIdentification(result, best);
+  }
+  if (others.length) {
+    result.append(element("p", null, `Ou peut-être : ${others.map((candidate) => candidate.name).join(", ")}.`));
+  }
+}
+
+function renderPassIdentification(result, best) {
   const start = new Date(best.starts_at);
   const end = new Date(best.ends_at);
   result.replaceChildren(
@@ -133,9 +152,6 @@ function renderIdentification(candidates) {
     element("p", null, `Au plus haut à ${best.max_elevation_deg}° au-dessus de l'horizon.`),
   );
   if (best.kind === "train") result.append(element("p", null, TRAIN_EXPLANATION));
-  if (others.length) {
-    result.append(element("p", null, `Ou peut-être : ${others.map((pass) => pass.name).join(", ")}.`));
-  }
 }
 
 // ---------- Formulaire « C'était quoi, ça ? » ----------
