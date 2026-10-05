@@ -30,8 +30,34 @@ Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur P
 | Route | Rôle |
 |---|---|
 | `GET /` | La page web |
+| `GET /health` | Vérification de santé pour l'hébergeur : répond 200 sans rien calculer |
 | `GET /api/passes?latitude=&longitude=&hours=12` | Les passages visibles des prochaines heures (1 à 48) |
 | `GET /api/identification?latitude=&longitude=&at=&direction=` | « C'était quoi, ça ? » : `at` en ISO 8601 avec fuseau, `direction` parmi N, NE, E, SE, S, SW, W, NW. Chaque candidat porte un `kind` : `satellite`, `train` ou `planet` |
+
+## Lancer l'image Docker
+
+```bash
+docker build -t la-haut .
+docker run --rm -p 8000:8000 la-haut
+```
+
+L'image (Python 3.13 slim) tourne sous un utilisateur non root, écoute sur le port donné par `$PORT` (8000 par défaut) et garde ses catalogues CelesTrak dans `/tmp/la-haut`.
+
+## Mettre en ligne
+
+Le dépôt contient une blueprint Render (`render.yaml`) : un service web gratuit, construit depuis le `Dockerfile`, région Francfort, surveillé sur `/health`. Le déploiement se fait depuis le compte du propriétaire du dépôt :
+
+1. Crée un compte sur [render.com](https://render.com), de préférence en te connectant avec GitHub.
+2. Dans le tableau de bord, choisis **New** → **Blueprint**.
+3. Relie ton compte GitHub si Render le demande, et autorise l'accès au dépôt `la-haut` (tous les dépôts ou seulement celui-ci).
+4. Choisis le dépôt `la-haut` et la branche `main` : Render lit `render.yaml` et propose le service `la-haut` sur l'offre **Free**. Valide avec **Apply**.
+5. Attends la fin de la construction de l'image (quelques minutes), puis ouvre l'adresse donnée par Render, du type `https://la-haut.onrender.com`. `https://…/health` doit répondre `{"status":"ok"}`.
+
+Ensuite, chaque fusion sur `main` redéploie le site automatiquement. Ce qu'implique l'offre gratuite :
+
+- le service s'endort après une quinzaine de minutes sans visite ; la visite suivante attend environ une minute qu'il se réveille ;
+- le disque est éphémère : après chaque réveil ou redéploiement, les catalogues CelesTrak sont téléchargés à nouveau ;
+- le processeur est modeste : l'onglet « Ce soir » peut mettre plusieurs secondes quand beaucoup de Starlink ont été lancés récemment.
 
 ## Architecture
 
