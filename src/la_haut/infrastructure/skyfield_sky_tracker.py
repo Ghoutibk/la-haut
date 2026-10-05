@@ -2,17 +2,16 @@ import math
 from datetime import datetime, timedelta
 from functools import lru_cache
 
-from skyfield.api import EarthSatellite, Loader, wgs84
-from skyfield_data import get_skyfield_data_path
+from skyfield.api import EarthSatellite, wgs84
 
 from la_haut.domain.compass_point import FULL_TURN_DEG
 from la_haut.domain.observer import Observer
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
+from la_haut.infrastructure.bundled_ephemeris import load_bundled_ephemeris
 
 DEFAULT_STEP = timedelta(seconds=10)
-EPHEMERIS_FILE = "de421.bsp"
 
 
 def _instants(window: TimeWindow, step: timedelta) -> list[datetime]:
@@ -24,9 +23,7 @@ class SkyfieldSkyTracker:
     """Adaptateur SkyTracker : propagation SGP4 et position du Soleil avec Skyfield, hors ligne."""
 
     def __init__(self, step: timedelta = DEFAULT_STEP) -> None:
-        load = Loader(get_skyfield_data_path(), verbose=False)
-        self._timescale = load.timescale(builtin=True)
-        self._ephemeris = load(EPHEMERIS_FILE)
+        self._timescale, self._ephemeris = load_bundled_ephemeris()
         self._earth = self._ephemeris["earth"]
         self._sun = self._ephemeris["sun"]
         self._step = step

@@ -1,12 +1,11 @@
 from datetime import datetime
 
-from skyfield.api import Loader, wgs84
-from skyfield_data import get_skyfield_data_path
+from skyfield.api import wgs84
 
 from la_haut.domain.compass_point import FULL_TURN_DEG
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
-from la_haut.infrastructure.skyfield_sky_tracker import EPHEMERIS_FILE
+from la_haut.infrastructure.bundled_ephemeris import load_bundled_ephemeris
 
 # DE421 donne Vénus et Mars elles-mêmes, Jupiter et Saturne par le barycentre de leur système.
 EPHEMERIS_TARGETS = {
@@ -21,9 +20,7 @@ class SkyfieldPlanetLocator:
     """Adaptateur PlanetLocator : positions apparentes avec Skyfield et DE421, hors ligne."""
 
     def __init__(self) -> None:
-        load = Loader(get_skyfield_data_path(), verbose=False)
-        self._timescale = load.timescale(builtin=True)
-        self._ephemeris = load(EPHEMERIS_FILE)
+        self._timescale, self._ephemeris = load_bundled_ephemeris()
 
     def locate(self, planet: Planet, observer: Observer, at: datetime) -> PlanetPosition:
         time = self._timescale.from_datetime(at)
