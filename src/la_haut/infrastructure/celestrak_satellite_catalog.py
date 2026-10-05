@@ -1,6 +1,8 @@
 import ssl
+import time
 import urllib.parse
 import urllib.request
+from datetime import timedelta
 from pathlib import Path
 
 import certifi
@@ -11,6 +13,8 @@ from la_haut.infrastructure.tle_file_satellite_catalog import parse_three_line_c
 CELESTRAK_GP_URL = "https://celestrak.org/NORAD/elements/gp.php"
 BRIGHTEST_SATELLITES_GROUP = "visual"
 DOWNLOAD_TIMEOUT_S = 30
+# CelesTrak publie toutes les deux heures et demande de ne pas recharger plus souvent.
+CELESTRAK_UPDATE_INTERVAL = timedelta(hours=2)
 
 
 class CelestrakSatelliteCatalog:
@@ -24,15 +28,23 @@ class CelestrakSatelliteCatalog:
         cache_path: Path,
         group: str = BRIGHTEST_SATELLITES_GROUP,
         base_url: str = CELESTRAK_GP_URL,
+        max_age: timedelta = CELESTRAK_UPDATE_INTERVAL,
     ) -> None:
         self._cache_path = cache_path
         self._group = group
         self._base_url = base_url
+        self._max_age = max_age
 
     def tracked_satellites(self) -> list[Satellite]:
-        text = self._download()
-        self._cache_path.write_text(text, encoding="utf-8")
-        return parse_three_line_catalog(text)
+        if not self._cache_is_fresh():
+            self._cache_path.write_text(self._download(), encoding="utf-8")
+        return parse_three_line_catalog(self._cache_path.read_text(encoding="utf-8"))
+
+    def _cache_is_fresh(self) -> bool:
+        if not self._cache_path.exists():
+            return False
+        age_s = time.time() - self._cache_path.stat().st_mtime
+        return age_s < self._max_age.total_seconds()
 
     def _download(self) -> str:
         query = urllib.parse.urlencode({"GROUP": self._group, "FORMAT": "tle"})
