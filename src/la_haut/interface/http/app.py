@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import InvalidSightingError, Sighting
@@ -35,6 +36,11 @@ def create_app(
     @app.exception_handler(InvalidSightingError)
     def reject_invalid_sighting(_: Request, error: InvalidSightingError) -> JSONResponse:
         return JSONResponse(status_code=422, content={"detail": str(error)})
+
+    @app.exception_handler(CatalogUnavailableError)
+    def report_unavailable_catalog(_: Request, __: CatalogUnavailableError) -> JSONResponse:
+        detail = "Le catalogue des satellites est indisponible pour le moment, réessaie plus tard."
+        return JSONResponse(status_code=503, content={"detail": detail})
 
     @app.get("/api/passes")
     def tonight(

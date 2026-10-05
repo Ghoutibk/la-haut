@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.observer import Observer
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
@@ -97,3 +98,20 @@ def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
     response = a_client({}).get("/api/identification", params=seen)
 
     assert response.status_code == 422
+
+
+class UnavailableCatalog:
+    def tracked_satellites(self):
+        raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
+
+
+def test_the_api_says_so_when_no_catalog_is_available():
+    list_visible_passes = ListVisiblePasses(
+        catalog=UnavailableCatalog(), tracker=FakeSkyTracker({})
+    )
+    client = TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
+
+    response = client.get("/api/passes", params=PARIS)
+
+    assert response.status_code == 503
+    assert "catalogue" in response.json()["detail"]
