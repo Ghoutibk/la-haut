@@ -1,0 +1,15 @@
+# Blueprint Render : Là-haut sur l'offre gratuite, construit depuis le Dockerfile.
+services:
+  - type: web
+    name: la-haut
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: LA_HAUT_CACHE
+        value: /tmp/la-haut/visual.tle
