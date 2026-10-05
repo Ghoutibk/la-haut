@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from la_haut.application.combined_satellite_catalog import CombinedSatelliteCatalog
 from la_haut.application.famous_satellite_catalog import FamousSatelliteCatalog
 from la_haut.application.identify_sighting import IdentifySighting
+from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.application.starlink_catalog import StarlinkCatalog
@@ -15,6 +16,7 @@ from la_haut.infrastructure.celestrak_satellite_catalog import (
     CELESTRAK_GP_URL,
     CelestrakSatelliteCatalog,
 )
+from la_haut.infrastructure.skyfield_planet_locator import SkyfieldPlanetLocator
 from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
 from la_haut.infrastructure.tle_file_satellite_catalog import TleFileSatelliteCatalog
 from la_haut.interface.http.app import create_app
@@ -52,16 +54,22 @@ def build_list_visible_passes_from_celestrak(
     return _list_visible_passes(catalog)
 
 
-def build_identify_sighting(catalog_path: Path) -> IdentifySighting:
-    """« C'était quoi, ça ? » parmi les satellites d'un fichier TLE local."""
-    return IdentifySighting(build_list_visible_passes(catalog_path))
+def _identify_sighting(list_visible_passes: ListVisiblePasses) -> IdentifySightingWithPlanets:
+    return IdentifySightingWithPlanets(
+        IdentifySighting(list_visible_passes), SkyfieldPlanetLocator()
+    )
+
+
+def build_identify_sighting(catalog_path: Path) -> IdentifySightingWithPlanets:
+    """« C'était quoi, ça ? » parmi les satellites d'un fichier TLE local et les planètes."""
+    return _identify_sighting(build_list_visible_passes(catalog_path))
 
 
 def build_identify_sighting_from_celestrak(
     cache_path: Path, base_url: str = CELESTRAK_GP_URL
-) -> IdentifySighting:
-    """« C'était quoi, ça ? » parmi les satellites célèbres et les Starlink récents de CelesTrak."""
-    return IdentifySighting(build_list_visible_passes_from_celestrak(cache_path, base_url))
+) -> IdentifySightingWithPlanets:
+    """« C'était quoi, ça ? » parmi les satellites suivis depuis CelesTrak et les planètes."""
+    return _identify_sighting(build_list_visible_passes_from_celestrak(cache_path, base_url))
 
 
 def build_web_app(cache_path: Path | None = None, base_url: str = CELESTRAK_GP_URL) -> FastAPI:
@@ -72,4 +80,4 @@ def build_web_app(cache_path: Path | None = None, base_url: str = CELESTRAK_GP_U
     cache_path = cache_path or Path(os.environ.get("LA_HAUT_CACHE", DEFAULT_CACHE_PATH))
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, base_url)
-    return create_app(list_visible_passes, IdentifySighting(list_visible_passes))
+    return create_app(list_visible_passes, _identify_sighting(list_visible_passes))
