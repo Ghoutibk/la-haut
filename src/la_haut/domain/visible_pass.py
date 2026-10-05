@@ -18,6 +18,7 @@ class VisiblePass:
     max_elevation_deg: float
     docked_with: tuple[str, ...] = ()
     path: tuple[SkySample, ...] = ()
+    launch: str = ""
 
     @property
     def duration(self) -> timedelta:
