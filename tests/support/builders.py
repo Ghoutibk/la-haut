@@ -3,10 +3,12 @@
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
+from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
 from la_haut.domain.satellite import Satellite, TwoLineElements
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
+from la_haut.domain.visible_pass import VisiblePass
 from tests.support.fixtures import (
     ISS_NAME,
     ISS_TLE_LINE_1,
@@ -29,6 +31,19 @@ def a_sky_sample(**overrides) -> SkySample:
         sun_elevation_deg=-12.0,
     )
     return replace(sample, **overrides)
+
+
+def a_visible_pass(**overrides) -> VisiblePass:
+    """Un passage de 4 minutes, du sud vers l'est ; chaque test ne change que ce qui compte."""
+    visible_pass = VisiblePass(
+        satellite_name="CSS (TIANHE)",
+        starts_at=DEFAULT_INSTANT,
+        ends_at=DEFAULT_INSTANT + 4 * ONE_MINUTE,
+        appears_in=CompassPoint.SOUTH,
+        vanishes_in=CompassPoint.EAST,
+        max_elevation_deg=17.0,
+    )
+    return replace(visible_pass, **overrides)
 
 
 def a_satellite(name: str = ISS_NAME) -> Satellite:
