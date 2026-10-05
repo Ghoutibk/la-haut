@@ -8,14 +8,17 @@ from urllib.parse import parse_qs, urlparse
 class FakeCelestrak:
     def __init__(self) -> None:
         self.body = ""
+        self.bodies_by_group: dict[str, str] = {}
         self.status = 200
         self.requests: list[dict[str, list[str]]] = []
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802 (nom imposé par http.server)
-                fake.requests.append(parse_qs(urlparse(self.path).query))
-                payload = fake.body.encode("utf-8")
+                query = parse_qs(urlparse(self.path).query)
+                fake.requests.append(query)
+                [group] = query.get("GROUP", [""])
+                payload = fake.bodies_by_group.get(group, fake.body).encode("utf-8")
                 self.send_response(fake.status)
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(payload)))
@@ -36,8 +39,13 @@ class FakeCelestrak:
         self._server.shutdown()
         self._server.server_close()
 
-    def publishes(self, *lines: str) -> None:
-        self.body = "\r\n".join(lines) + "\r\n"
+    def publishes(self, *lines: str, group: str | None = None) -> None:
+        """Publie ces lignes pour un groupe donné, ou pour tous les groupes sans réponse propre."""
+        body = "\r\n".join(lines) + "\r\n"
+        if group is None:
+            self.body = body
+        else:
+            self.bodies_by_group[group] = body
         self.status = 200
 
     def fails_with(self, status: int) -> None:

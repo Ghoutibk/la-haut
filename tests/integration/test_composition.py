@@ -20,6 +20,10 @@ from tests.support.fixtures import (
     ISS_TLE_EPOCH,
     ISS_TLE_LINE_1,
     ISS_TLE_LINE_2,
+    ROCKET_BODY_NAME,
+    ROCKET_BODY_TLE_LINE_1,
+    ROCKET_BODY_TLE_LINE_2,
+    STARLINK_TRAIN,
 )
 
 
@@ -65,3 +69,20 @@ def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
         response = TestClient(app).get("/")
 
     assert response.status_code == 200
+
+
+def test_the_recent_starlinks_from_celestrak_are_announced_as_a_train(tmp_path):
+    day_after_epoch = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(days=1))
+    rocket_body = (ROCKET_BODY_NAME, ROCKET_BODY_TLE_LINE_1, ROCKET_BODY_TLE_LINE_2)
+    starlinks = [line for entry in STARLINK_TRAIN for line in entry]
+
+    with FakeCelestrak() as celestrak:
+        celestrak.publishes(*rocket_body, group="visual")
+        celestrak.publishes(*starlinks, *rocket_body, group="last-30-days")
+        list_visible_passes = build_list_visible_passes_from_celestrak(
+            tmp_path / "visual.tle", base_url=celestrak.url
+        )
+        [train] = list_visible_passes.execute(an_observer_in_paris(), day_after_epoch)
+
+    assert (train.is_starlink_train, train.train_size) == (True, 3)
+    assert (tmp_path / "last-30-days.tle").exists()
