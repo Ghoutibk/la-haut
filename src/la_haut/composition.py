@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from la_haut.application.famous_satellite_catalog import FamousSatelliteCatalog
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
@@ -24,5 +25,6 @@ def build_list_visible_passes(catalog_path: Path) -> ListVisiblePasses:
 def build_list_visible_passes_from_celestrak(
     cache_path: Path, base_url: str = CELESTRAK_GP_URL
 ) -> ListVisiblePasses:
-    """Les satellites les plus brillants, tenus à jour depuis CelesTrak."""
-    return _list_visible_passes(CelestrakSatelliteCatalog(cache_path, base_url=base_url))
+    """Les satellites célèbres, avec leurs éléments tenus à jour depuis CelesTrak."""
+    brightest = CelestrakSatelliteCatalog(cache_path, base_url=base_url)
+    return _list_visible_passes(FamousSatelliteCatalog(brightest))
