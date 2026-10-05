@@ -59,3 +59,18 @@ def test_famous_satellites_are_presented_under_their_public_name(catalog_name, p
 
 def test_another_satellite_keeps_its_catalog_name():
     assert present_pass(a_visible_pass(satellite_name="SL-16 R/B"))["name"] == "SL-16 R/B"
+
+
+def test_a_starlink_train_is_presented_with_the_number_of_its_satellites():
+    presented = present_pass(
+        a_visible_pass(
+            satellite_name="STARLINK-90001", train_followers=("STARLINK-90002", "STARLINK-90003")
+        )
+    )
+
+    assert presented["kind"] == "train"
+    assert presented["name"] == "Train Starlink (3 satellites)"
+
+
+def test_a_lone_satellite_is_presented_as_a_satellite():
+    assert present_pass(a_visible_pass())["kind"] == "satellite"

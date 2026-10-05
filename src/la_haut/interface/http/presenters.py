@@ -25,9 +25,16 @@ def _present_direction(point: CompassPoint) -> dict[str, str]:
     return {"code": point.value, "label": FRENCH_COMPASS_NAMES[point]}
 
 
+def _public_name(visible_pass: VisiblePass) -> str:
+    if visible_pass.is_starlink_train:
+        return f"Train Starlink ({visible_pass.train_size} satellites)"
+    return PUBLIC_NAMES.get(visible_pass.satellite_name, visible_pass.satellite_name)
+
+
 def present_pass(visible_pass: VisiblePass) -> dict:
     return {
-        "name": PUBLIC_NAMES.get(visible_pass.satellite_name, visible_pass.satellite_name),
+        "kind": "train" if visible_pass.is_starlink_train else "satellite",
+        "name": _public_name(visible_pass),
         "satellite": visible_pass.satellite_name,
         "docked_with": list(visible_pass.docked_with),
         "starts_at": visible_pass.starts_at.isoformat(),
