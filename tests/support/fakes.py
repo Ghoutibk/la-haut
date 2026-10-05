@@ -1,5 +1,6 @@
 """Doublures des ports de l'application, pour tester sans Skyfield ni réseau."""
 
+from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.observer import Observer
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
@@ -26,3 +27,10 @@ class FakeSkyTracker:
     ) -> list[SkySample]:
         self.requests.append((satellite.name, observer, window))
         return self._tracks_by_name.get(satellite.name, [])
+
+
+class UnavailableSatelliteCatalog:
+    """Un catalogue injoignable et sans cache."""
+
+    def tracked_satellites(self) -> list[Satellite]:
+        raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
