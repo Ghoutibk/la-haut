@@ -33,3 +33,11 @@ def test_the_domain_depends_only_on_itself_and_the_standard_library():
 
 def test_the_application_depends_only_on_the_domain_and_the_standard_library():
     assert _imports_outside("application", ("la_haut.domain", "la_haut.application")) == []
+
+
+def test_the_interface_never_reaches_the_adapters_directly():
+    forbidden = ("la_haut.infrastructure", "la_haut.composition")
+
+    assert [
+        module for module in _imported_modules("interface") if module.startswith(forbidden)
+    ] == []
