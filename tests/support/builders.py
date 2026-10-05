@@ -46,8 +46,10 @@ def a_visible_pass(**overrides) -> VisiblePass:
     return replace(visible_pass, **overrides)
 
 
-def a_satellite(name: str = ISS_NAME) -> Satellite:
-    return Satellite(name=name, elements=TwoLineElements(ISS_TLE_LINE_1, ISS_TLE_LINE_2))
+def a_satellite(
+    name: str = ISS_NAME, lines: tuple[str, str] = (ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+) -> Satellite:
+    return Satellite(name=name, elements=TwoLineElements(*lines))
 
 
 def an_observer_in_paris() -> Observer:
