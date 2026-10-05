@@ -6,6 +6,8 @@ Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu dep
 
 Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres : l'ISS, Tiangong et Hubble. Leurs éléments orbitaux viennent du groupe « visual » de CelesTrak, téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
 
+À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi le satellite qui était là : c'est « C'était quoi, ça ? ».
+
 ## Démarrer
 
 ```bash
@@ -40,6 +42,9 @@ src/la_haut/
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
 | Satellite célèbre | `is_famous`, `FamousSatelliteCatalog` | ISS, Tiangong ou Hubble, reconnus à leur numéro NORAD : les seuls annoncés pour l'instant |
+| Signalement | `Sighting` | « J'ai vu une lumière à telle heure, dans telle direction » |
+| Directions voisines | `CompassPoint.is_close_to` | Le même point cardinal ou l'un de ses deux voisins : une direction donnée à l'œil |
+| Écart au signalement | `VisiblePass.gap_to` | Temps entre le signalement et le moment où le passage était dans cette direction, à 5 minutes près |
 | Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
@@ -67,4 +72,5 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 
 - Seuls les satellites célèbres sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
 - Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
+- « C'était quoi, ça ? » ne reconnaît que les satellites célèbres : un avion, une étoile ou une planète donnent « aucun satellite connu ». L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé.
 - L'identification « c'était quoi ? », l'API et l'interface viendront dans les prochaines tranches.
