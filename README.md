@@ -39,6 +39,7 @@ src/la_haut/
 | Point cardinal | `CompassPoint` | Une des huit directions de la rose des vents |
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
+| Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
 

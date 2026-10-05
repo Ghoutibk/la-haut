@@ -14,6 +14,7 @@ class VisiblePass:
     appears_in: CompassPoint
     vanishes_in: CompassPoint
     max_elevation_deg: float
+    docked_with: tuple[str, ...] = ()
 
     @property
     def duration(self) -> timedelta:

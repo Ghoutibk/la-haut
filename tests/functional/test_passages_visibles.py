@@ -8,7 +8,14 @@ from la_haut.composition import build_list_visible_passes
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.time_window import TimeWindow
 from tests.support.builders import an_observer_in_paris
-from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
+from tests.support.fixtures import (
+    DOCKED_VEHICLE_NAME,
+    DOCKED_VEHICLE_TLE_LINE_1,
+    DOCKED_VEHICLE_TLE_LINE_2,
+    ISS_NAME,
+    ISS_TLE_LINE_1,
+    ISS_TLE_LINE_2,
+)
 
 scenarios("passages_visibles.feature")
 
@@ -76,6 +83,13 @@ def catalog_path(tmp_path):
     return path
 
 
+@given("un vaisseau amarré à l'ISS dans le catalogue")
+def a_docked_vehicle_in_the_catalog(catalog_path):
+    entry = [DOCKED_VEHICLE_NAME, DOCKED_VEHICLE_TLE_LINE_1, DOCKED_VEHICLE_TLE_LINE_2]
+    with catalog_path.open("a", encoding="utf-8") as catalog:
+        catalog.write("\n".join(entry) + "\n")
+
+
 @when(
     parsers.parse("je cherche les passages visibles du {start} au {end}"),
     target_fixture="passes",
@@ -91,6 +105,12 @@ def search_visible_passes(observer, catalog_path, start, end):
 @then("je ne vois aucun passage")
 def no_pass_is_announced(passes):
     assert passes == []
+
+
+@then("le vaisseau amarré est signalé avec l'ISS")
+def the_docked_vehicle_travels_with_the_iss(passes):
+    [iss_pass] = passes
+    assert iss_pass.docked_with == (DOCKED_VEHICLE_NAME,)
 
 
 @then("je vois ces passages :")
