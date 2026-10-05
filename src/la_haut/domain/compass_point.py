@@ -27,3 +27,9 @@ class CompassPoint(StrEnum):
         points = list(cls)
         index = int((azimuth_deg + DEGREES_PER_POINT / 2) // DEGREES_PER_POINT) % len(points)
         return points[index]
+
+    def is_close_to(self, other: "CompassPoint") -> bool:
+        """Le même point ou un de ses deux voisins : une direction donnée à l'œil, sans boussole."""
+        points = list(CompassPoint)
+        steps_apart = abs(points.index(self) - points.index(other))
+        return min(steps_apart, len(points) - steps_apart) <= 1

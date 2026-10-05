@@ -38,3 +38,27 @@ def test_each_compass_point_covers_45_degrees_centred_on_its_heading(azimuth_deg
 def test_an_azimuth_outside_0_to_360_degrees_is_rejected(azimuth_deg):
     with pytest.raises(InvalidAzimuthError):
         CompassPoint.from_azimuth(azimuth_deg)
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (CompassPoint.SOUTH, CompassPoint.SOUTH),
+        (CompassPoint.SOUTH, CompassPoint.SOUTH_EAST),
+        (CompassPoint.SOUTH_EAST, CompassPoint.SOUTH),
+        (CompassPoint.NORTH, CompassPoint.NORTH_WEST),
+    ],
+)
+def test_a_compass_point_is_close_to_itself_and_its_two_neighbours(first, second):
+    assert first.is_close_to(second)
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        (CompassPoint.NORTH, CompassPoint.EAST),
+        (CompassPoint.SOUTH_EAST, CompassPoint.NORTH_WEST),
+    ],
+)
+def test_a_compass_point_is_not_close_to_points_further_away(first, second):
+    assert not first.is_close_to(second)
