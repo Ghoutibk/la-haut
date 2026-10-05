@@ -1,86 +1,24 @@
-import re
-from datetime import date, datetime, time, timedelta
-from zoneinfo import ZoneInfo
+from datetime import time, timedelta
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from la_haut.composition import build_list_visible_passes
-from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.time_window import TimeWindow
-from tests.support.builders import an_observer_in_paris
 from tests.support.fixtures import (
     DOCKED_VEHICLE_NAME,
     DOCKED_VEHICLE_TLE_LINE_1,
     DOCKED_VEHICLE_TLE_LINE_2,
-    ISS_NAME,
-    ISS_TLE_LINE_1,
-    ISS_TLE_LINE_2,
+)
+from tests.support.french import (
+    DIRECTIONS,
+    french_date,
+    paris_instant,
+    paris_instant_from_hour_text,
 )
 
 scenarios("passages_visibles.feature")
 
-PARIS_TIME = ZoneInfo("Europe/Paris")
 TOLERANCE = timedelta(minutes=1)
-MONTHS = {
-    name: number
-    for number, name in enumerate(
-        [
-            "janvier",
-            "février",
-            "mars",
-            "avril",
-            "mai",
-            "juin",
-            "juillet",
-            "août",
-            "septembre",
-            "octobre",
-            "novembre",
-            "décembre",
-        ],
-        start=1,
-    )
-}
-DIRECTIONS = {
-    "nord": CompassPoint.NORTH,
-    "nord-est": CompassPoint.NORTH_EAST,
-    "est": CompassPoint.EAST,
-    "sud-est": CompassPoint.SOUTH_EAST,
-    "sud": CompassPoint.SOUTH,
-    "sud-ouest": CompassPoint.SOUTH_WEST,
-    "ouest": CompassPoint.WEST,
-    "nord-ouest": CompassPoint.NORTH_WEST,
-}
-
-
-def french_date(text: str) -> date:
-    day, month, year = text.split()
-    return date(int(year), MONTHS[month], int(day))
-
-
-def paris_instant(day: date, clock: time) -> datetime:
-    return datetime.combine(day, clock, tzinfo=PARIS_TIME)
-
-
-def paris_instant_from_hour_text(text: str) -> datetime:
-    """« 4 juillet 2018 à 3 h » → instant à Paris."""
-    match = re.fullmatch(r"(?P<day>.+) à (?P<hour>\d{1,2}) h", text)
-    return paris_instant(french_date(match["day"]), time(int(match["hour"])))
-
-
-@given("un observateur à Paris", target_fixture="observer")
-def observer():
-    return an_observer_in_paris()
-
-
-@given(
-    "un catalogue qui suit l'ISS avec ses éléments orbitaux du 3 juillet 2018",
-    target_fixture="catalog_path",
-)
-def catalog_path(tmp_path):
-    path = tmp_path / "stations.tle"
-    path.write_text("\n".join([ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2]) + "\n", "utf-8")
-    return path
 
 
 @given("un vaisseau amarré à l'ISS dans le catalogue")
