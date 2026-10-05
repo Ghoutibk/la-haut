@@ -1,7 +1,10 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from la_haut.domain.compass_point import CompassPoint
+
+# Une heure donnée de mémoire, à quelques minutes près.
+SIGHTING_TIME_TOLERANCE = timedelta(minutes=5)
 
 
 class InvalidSightingError(ValueError):
