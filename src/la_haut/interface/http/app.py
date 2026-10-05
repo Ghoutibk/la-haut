@@ -40,6 +40,11 @@ def create_app(
     def web_page() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html")
 
+    @app.get("/health", include_in_schema=False)
+    def health() -> dict:
+        """Pour l'hébergeur : le service répond, sans rien calculer ni télécharger."""
+        return {"status": "ok"}
+
     @app.exception_handler(InvalidSightingError)
     def reject_invalid_sighting(_: Request, error: InvalidSightingError) -> JSONResponse:
         return JSONResponse(status_code=422, content={"detail": str(error)})

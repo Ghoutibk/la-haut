@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
-from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet
 from la_haut.domain.time_window import TimeWindow
@@ -18,7 +17,12 @@ from tests.support.builders import (
     a_satellite,
     a_track,
 )
-from tests.support.fakes import FakePlanetLocator, FakeSatelliteCatalog, FakeSkyTracker
+from tests.support.fakes import (
+    FakePlanetLocator,
+    FakeSatelliteCatalog,
+    FakeSkyTracker,
+    UnavailableSatelliteCatalog,
+)
 
 PARIS = {"latitude": 48.8566, "longitude": 2.3522}
 WEST = {"azimuth_deg": 270.0}
@@ -122,21 +126,25 @@ def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
     assert response.status_code == 422
 
 
-class UnavailableCatalog:
-    def tracked_satellites(self):
-        raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
+def a_client_without_catalog():
+    list_visible_passes = ListVisiblePasses(
+        catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
+    )
+    return TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
 
 
 def test_the_api_says_so_when_no_catalog_is_available():
-    list_visible_passes = ListVisiblePasses(
-        catalog=UnavailableCatalog(), tracker=FakeSkyTracker({})
-    )
-    client = TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
-
-    response = client.get("/api/passes", params=PARIS)
+    response = a_client_without_catalog().get("/api/passes", params=PARIS)
 
     assert response.status_code == 503
     assert "catalogue" in response.json()["detail"]
+
+
+def test_the_health_check_answers_without_computing_anything():
+    response = a_client_without_catalog().get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 
 
 def test_the_web_page_is_served_at_the_root():
