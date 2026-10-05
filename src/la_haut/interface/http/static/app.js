@@ -75,6 +75,9 @@ function isToday(date) {
   return date.toDateString() === new Date().toDateString();
 }
 
+const TRAIN_EXPLANATION =
+  "Une file de points brillants qui se suivent : les satellites Starlink d'un même lancement, quelques jours après leur mise en orbite.";
+
 function renderPass(pass) {
   const start = new Date(pass.starts_at);
   const item = element("li", "pass");
@@ -88,6 +91,7 @@ function renderPass(pass) {
     element("div", "pass-meta", route(pass)),
     element("div", "pass-extra", `Au plus haut à ${pass.max_elevation_deg}° au-dessus de l'horizon`),
   );
+  if (pass.kind === "train") details.append(element("div", "pass-meta", TRAIN_EXPLANATION));
 
   item.append(time, details);
   return item;
@@ -101,7 +105,7 @@ async function showTonight() {
   try {
     const { passes } = await getJson("/api/passes", { hours: 12 });
     status.textContent = passes.length
-      ? "Les satellites célèbres visibles à l'œil nu dans les 12 prochaines heures."
+      ? "Les satellites célèbres et les trains Starlink visibles à l'œil nu dans les 12 prochaines heures."
       : "Aucun passage visible dans les 12 prochaines heures. Les satellites se voient surtout peu après le coucher du soleil et avant l'aube.";
     list.append(...passes.map(renderPass));
   } catch (error) {
@@ -128,6 +132,7 @@ function renderIdentification(candidates) {
     element("p", null, `Visible de ${timeFormat.format(start)} à ${timeFormat.format(end)}, ${fromThe(best.appears_in.label)} ${towardThe(best.vanishes_in.label)}.`),
     element("p", null, `Au plus haut à ${best.max_elevation_deg}° au-dessus de l'horizon.`),
   );
+  if (best.kind === "train") result.append(element("p", null, TRAIN_EXPLANATION));
   if (others.length) {
     result.append(element("p", null, `Ou peut-être : ${others.map((pass) => pass.name).join(", ")}.`));
   }
