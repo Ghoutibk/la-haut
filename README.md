@@ -2,9 +2,9 @@
 
 Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu depuis chez toi, et la réponse à « c'était quoi, cette lumière ? ».
 
-## Ce que fait cette première tranche
+## Ce que fait Là-haut aujourd'hui
 
-Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites d'un catalogue au format CelesTrak. Le calcul tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées.
+Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres : l'ISS, Tiangong et Hubble. Leurs éléments orbitaux viennent du groupe « visual » de CelesTrak, téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
 
 ## Démarrer
 
@@ -23,7 +23,7 @@ Clean Architecture : les dépendances pointent vers le domaine, jamais l'inverse
 src/la_haut/
 ├── domain/          règles métier pures, aucune dépendance technique
 ├── application/     cas d'usage et ports (typing.Protocol)
-├── infrastructure/  adaptateurs : Skyfield, fichier TLE CelesTrak
+├── infrastructure/  adaptateurs : Skyfield, fichier TLE, téléchargement CelesTrak
 └── composition.py   racine de composition : branche les adaptateurs sur les cas d'usage
 ```
 
@@ -39,6 +39,7 @@ src/la_haut/
 | Point cardinal | `CompassPoint` | Une des huit directions de la rose des vents |
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
+| Satellite célèbre | `is_famous`, `FamousSatelliteCatalog` | ISS, Tiangong ou Hubble, reconnus à leur numéro NORAD : les seuls annoncés pour l'instant |
 | Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
@@ -64,6 +65,6 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 
 ## Limites connues
 
-- La luminosité n'est pas encore prise en compte : un petit satellite éclairé compte comme visible.
-- Le catalogue se lit depuis un fichier ; le téléchargement depuis CelesTrak reste à brancher.
+- Seuls les satellites célèbres sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
+- Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
 - L'identification « c'était quoi ? », l'API et l'interface viendront dans les prochaines tranches.

@@ -8,6 +8,10 @@ from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
 
 
+class CatalogUnavailableError(RuntimeError):
+    """Aucun catalogue de satellites n'est disponible, même ancien."""
+
+
 class SatelliteCatalog(Protocol):
     def tracked_satellites(self) -> list[Satellite]:
         """Les satellites que Là-haut suit pour ses utilisateurs."""
