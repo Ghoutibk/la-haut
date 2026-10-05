@@ -9,6 +9,7 @@ from tests.support.builders import (
     an_observer_in_paris,
 )
 from tests.support.fakes import FakeSatelliteCatalog, FakeSkyTracker
+from tests.support.fixtures import STARLINK_TRAIN
 
 LATER = DEFAULT_INSTANT + timedelta(minutes=30)
 
@@ -52,3 +53,14 @@ def test_satellites_docked_together_are_announced_as_one_pass():
         "CSS (TIANHE)",
         ("SHENZHOU-23",),
     )
+
+
+def test_starlinks_of_one_launch_on_the_same_path_are_announced_as_one_train():
+    starlinks = [a_satellite(name, (line_1, line_2)) for name, line_1, line_2 in STARLINK_TRAIN]
+    same_track = a_track({}, {}, {})
+
+    [train] = list_visible_passes(
+        starlinks, {satellite.name: same_track for satellite in starlinks}
+    )
+
+    assert (train.is_starlink_train, train.train_size, train.docked_with) == (True, 3, ())
