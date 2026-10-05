@@ -1,5 +1,6 @@
 import math
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 from skyfield.api import EarthSatellite, Loader, wgs84
 from skyfield_data import get_skyfield_data_path
@@ -29,22 +30,29 @@ class SkyfieldSkyTracker:
         self._earth = self._ephemeris["earth"]
         self._sun = self._ephemeris["sun"]
         self._step = step
+        # Tous les satellites d'une recherche partagent la fenêtre et l'observateur : la rotation
+        # de la Terre (nutation) et la hauteur du Soleil ne se calculent qu'une fois pour eux.
+        self._sky_clock = lru_cache(maxsize=8)(self._compute_sky_clock)
+
+    def _compute_sky_clock(self, observer: Observer, window: TimeWindow):
+        instants = _instants(window, self._step)
+        times = self._timescale.from_datetimes(instants)
+        place = wgs84.latlon(
+            observer.latitude_deg, observer.longitude_deg, elevation_m=observer.altitude_m
+        )
+        sun_elevations, _, _ = (self._earth + place).at(times).observe(self._sun).apparent().altaz()
+        return instants, times, place, sun_elevations
 
     def track(
         self, satellite: Satellite, observer: Observer, window: TimeWindow
     ) -> list[SkySample]:
-        instants = _instants(window, self._step)
-        times = self._timescale.from_datetimes(instants)
+        instants, times, place, sun_elevations = self._sky_clock(observer, window)
         orbiter = EarthSatellite(
             satellite.elements.line_1, satellite.elements.line_2, satellite.name, self._timescale
-        )
-        place = wgs84.latlon(
-            observer.latitude_deg, observer.longitude_deg, elevation_m=observer.altitude_m
         )
 
         elevations, azimuths, _ = (orbiter - place).at(times).altaz()
         sunlit = orbiter.at(times).is_sunlit(self._ephemeris)
-        sun_elevations, _, _ = (self._earth + place).at(times).observe(self._sun).apparent().altaz()
 
         return [
             SkySample(
