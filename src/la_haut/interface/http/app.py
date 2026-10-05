@@ -2,10 +2,12 @@
 
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
@@ -20,6 +22,7 @@ Latitude = Annotated[float, Query(ge=-90, le=90)]
 Longitude = Annotated[float, Query(ge=-180, le=180)]
 DEFAULT_HOURS_AHEAD = 12
 MAX_HOURS_AHEAD = 48
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 def _utc_now() -> datetime:
@@ -32,6 +35,11 @@ def create_app(
     clock: Callable[[], datetime] = _utc_now,
 ) -> FastAPI:
     app = FastAPI(title="Là-haut")
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+    @app.get("/", include_in_schema=False)
+    def web_page() -> FileResponse:
+        return FileResponse(STATIC_DIR / "index.html")
 
     @app.exception_handler(InvalidSightingError)
     def reject_invalid_sighting(_: Request, error: InvalidSightingError) -> JSONResponse:

@@ -115,3 +115,16 @@ def test_the_api_says_so_when_no_catalog_is_available():
 
     assert response.status_code == 503
     assert "catalogue" in response.json()["detail"]
+
+
+def test_the_web_page_is_served_at_the_root():
+    response = a_client({}).get("/")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/html")
+    assert "Là-haut" in response.text
+
+
+@pytest.mark.parametrize("asset", ["/static/app.js", "/static/style.css"])
+def test_the_page_assets_are_served(asset):
+    assert a_client({}).get(asset).status_code == 200
