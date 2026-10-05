@@ -1,8 +1,14 @@
 import pytest
 
 from la_haut.domain.compass_point import CompassPoint
-from la_haut.interface.http.presenters import present_pass
-from tests.support.builders import DEFAULT_INSTANT, ONE_MINUTE, a_visible_pass
+from la_haut.domain.planet import Planet
+from la_haut.interface.http.presenters import present_candidate, present_pass
+from tests.support.builders import (
+    DEFAULT_INSTANT,
+    ONE_MINUTE,
+    a_planet_position,
+    a_visible_pass,
+)
 
 
 def test_a_pass_is_presented_with_its_times_in_iso_format():
@@ -74,3 +80,35 @@ def test_a_starlink_train_is_presented_with_the_number_of_its_satellites():
 
 def test_a_lone_satellite_is_presented_as_a_satellite():
     assert present_pass(a_visible_pass())["kind"] == "satellite"
+
+
+@pytest.mark.parametrize(
+    ("planet", "french_name"),
+    [
+        (Planet.VENUS, "Vénus"),
+        (Planet.JUPITER, "Jupiter"),
+        (Planet.MARS, "Mars"),
+        (Planet.SATURN, "Saturne"),
+    ],
+)
+def test_a_planet_is_presented_under_its_french_name(planet, french_name):
+    presented = present_candidate(a_planet_position(planet=planet))
+
+    assert (presented["kind"], presented["name"], presented["planet"]) == (
+        "planet",
+        french_name,
+        planet.value,
+    )
+
+
+def test_a_planet_is_presented_with_its_direction_and_rounded_height():
+    presented = present_candidate(a_planet_position(azimuth_deg=280.0, elevation_deg=11.6))
+
+    assert presented["direction"] == {"code": "W", "label": "ouest"}
+    assert presented["elevation_deg"] == 12
+
+
+def test_a_satellite_candidate_is_presented_as_its_pass():
+    visible_pass = a_visible_pass()
+
+    assert present_candidate(visible_pass) == present_pass(visible_pass)

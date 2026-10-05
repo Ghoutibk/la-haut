@@ -1,6 +1,7 @@
 """Traduction des objets du domaine en JSON pour la page web."""
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.visible_pass import VisiblePass
 
 FRENCH_COMPASS_NAMES = {
@@ -18,6 +19,13 @@ PUBLIC_NAMES = {
     "ISS (ZARYA)": "Station spatiale internationale",
     "CSS (TIANHE)": "Station spatiale chinoise Tiangong",
     "HST": "Télescope spatial Hubble",
+}
+
+FRENCH_PLANET_NAMES = {
+    Planet.VENUS: "Vénus",
+    Planet.JUPITER: "Jupiter",
+    Planet.MARS: "Mars",
+    Planet.SATURN: "Saturne",
 }
 
 
@@ -44,3 +52,20 @@ def present_pass(visible_pass: VisiblePass) -> dict:
         "vanishes_in": _present_direction(visible_pass.vanishes_in),
         "max_elevation_deg": round(visible_pass.max_elevation_deg),
     }
+
+
+def present_planet(position: PlanetPosition) -> dict:
+    return {
+        "kind": "planet",
+        "name": FRENCH_PLANET_NAMES[position.planet],
+        "planet": position.planet.value,
+        "direction": _present_direction(position.direction),
+        "elevation_deg": round(position.elevation_deg),
+    }
+
+
+def present_candidate(candidate: VisiblePass | PlanetPosition) -> dict:
+    """Un candidat de « C'était quoi, ça ? » : un satellite, un train Starlink ou une planète."""
+    if isinstance(candidate, PlanetPosition):
+        return present_planet(candidate)
+    return present_pass(candidate)
