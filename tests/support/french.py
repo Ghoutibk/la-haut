@@ -5,6 +5,7 @@ from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.planet import Planet
 
 PARIS_TIME = ZoneInfo("Europe/Paris")
 MONTHS = {
@@ -53,3 +54,11 @@ def paris_instant_from_hour_text(text: str) -> datetime:
     """« 4 juillet 2018 à 3 h » → instant à Paris."""
     match = re.fullmatch(r"(?P<day>.+) à (?P<hour>\d{1,2}) h", text)
     return paris_instant(french_date(match["day"]), time(int(match["hour"])))
+
+
+PLANETS = {
+    "Vénus": Planet.VENUS,
+    "Mars": Planet.MARS,
+    "Jupiter": Planet.JUPITER,
+    "Saturne": Planet.SATURN,
+}
