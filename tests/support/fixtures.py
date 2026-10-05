@@ -26,3 +26,26 @@ HUBBLE_TLE_LINE_2 = "2 20580  28.4729  58.1679 0001270 285.6016  74.4440 15.3181
 ROCKET_BODY_NAME = "SL-16 R/B"
 ROCKET_BODY_TLE_LINE_1 = "1 16182U 85097B   26277.86702633 -.00000011  00000+0  18308-4 0  9992"
 ROCKET_BODY_TLE_LINE_2 = "2 16182  71.0030  60.1639 0009676 291.7986 179.8193 14.16623856116857"
+
+# Trois Starlink FABRIQUÉS pour les tests : un même lancement (désignation 18999, pièces A, B, C)
+# sur l'orbite de l'ISS du 3 juillet 2018, chacun 1° d'anomalie moyenne derrière le précédent,
+# soit une quinzaine de secondes. Sommes de contrôle recalculées. Avec Skyfield
+# (find_events, seuil 10°), ils passent sur Paris le 4 juillet 2018 de 02:54:10 à 02:58:28 UTC.
+STARLINK_TRAIN_LAUNCH = "18999"
+STARLINK_TRAIN = (
+    (
+        "STARLINK-90001",
+        "1 90001U 18999A   18184.80969102  .00001614  00000-0  31745-4 0  9999",
+        "2 90001  51.6414 295.8524 0003435 262.6267 204.2868 15.54005638121106",
+    ),
+    (
+        "STARLINK-90002",
+        "1 90002U 18999B   18184.80969102  .00001614  00000-0  31745-4 0  9990",
+        "2 90002  51.6414 295.8524 0003435 262.6267 203.2868 15.54005638121106",
+    ),
+    (
+        "STARLINK-90003",
+        "1 90003U 18999C   18184.80969102  .00001614  00000-0  31745-4 0  9991",
+        "2 90003  51.6414 295.8524 0003435 262.6267 202.2868 15.54005638121106",
+    ),
+)
