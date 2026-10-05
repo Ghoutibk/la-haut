@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07090F">
+  <meta name="description" content="Les satellites visibles ce soir au-dessus de chez toi, et la réponse à « c'était quoi, cette lumière ? ».">
+  <title>Là-haut</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)"/></svg>
+        <span>Là-haut</span>
+      </div>
+      <span class="chip" id="place">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        <span id="place-label">Paris</span>
+      </span>
+    </header>
+
+    <main>
+      <section id="view-tonight" class="view" aria-labelledby="tonight-title">
+        <p class="eyebrow">Ce soir</p>
+        <h1 id="tonight-title">Au-dessus de toi</h1>
+        <p class="lede" id="tonight-status" role="status">Recherche des passages…</p>
+        <ol class="passes" id="passes"></ol>
+      </section>
+
+      <section id="view-identify" class="view" aria-labelledby="identify-title" hidden>
+        <p class="eyebrow">C'était quoi, ça ?</p>
+        <h1 id="identify-title">Tu as vu une lumière bouger dans le ciel ?</h1>
+
+        <form id="identify-form" novalidate>
+          <fieldset>
+            <legend>Quand ?</legend>
+            <div class="chips">
+              <button type="button" class="choice" data-when="now" aria-pressed="true">À l'instant</button>
+              <button type="button" class="choice" data-when="15" aria-pressed="false">Il y a 15 min</button>
+              <button type="button" class="choice" data-when="earlier" aria-pressed="false">Plus tôt</button>
+            </div>
+            <label class="field" id="earlier-field" hidden>
+              <span>Heure à laquelle tu l'as vue</span>
+              <input type="datetime-local" id="earlier-input">
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Dans quelle direction ?</legend>
+            <div class="compass">
+              <button type="button" class="choice" data-direction="NW" aria-pressed="false" aria-label="Nord-ouest">NO</button>
+              <button type="button" class="choice" data-direction="N" aria-pressed="false" aria-label="Nord">N</button>
+              <button type="button" class="choice" data-direction="NE" aria-pressed="false" aria-label="Nord-est">NE</button>
+              <button type="button" class="choice" data-direction="W" aria-pressed="false" aria-label="Ouest">O</button>
+              <span class="you" aria-hidden="true"><i></i>Toi</span>
+              <button type="button" class="choice" data-direction="E" aria-pressed="false" aria-label="Est">E</button>
+              <button type="button" class="choice" data-direction="SW" aria-pressed="false" aria-label="Sud-ouest">SO</button>
+              <button type="button" class="choice" data-direction="S" aria-pressed="false" aria-label="Sud">S</button>
+              <button type="button" class="choice" data-direction="SE" aria-pressed="false" aria-label="Sud-est">SE</button>
+            </div>
+          </fieldset>
+
+          <p class="error" id="identify-error" role="alert"></p>
+          <button type="submit" class="primary">Identifier</button>
+        </form>
+
+        <div class="result" id="identify-result" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <nav class="tabs" aria-label="Navigation principale">
+      <a class="tab" href="#ce-soir" data-view="tonight">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+        <span>Ce soir</span>
+      </a>
+      <a class="tab" href="#cetait-quoi" data-view="identify">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span>C'était quoi ?</span>
+      </a>
+    </nav>
+  </div>
+</body>
+</html>

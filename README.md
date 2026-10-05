@@ -8,6 +8,8 @@ Pour un observateur et une période, Là-haut liste les passages visibles à l'�
 
 À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi le satellite qui était là : c'est « C'était quoi, ça ? ».
 
+Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir » et « C'était quoi ? », appuyée sur une API HTTP.
+
 ## Démarrer
 
 ```bash
@@ -16,6 +18,20 @@ pip install -e ".[dev]"
 pre-commit install
 pytest
 ```
+
+## Lancer le site
+
+```bash
+uvicorn --factory la_haut.composition:build_web_app --reload
+```
+
+Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.tle` ; la variable d'environnement `LA_HAUT_CACHE` permet de le déplacer.
+
+| Route | Rôle |
+|---|---|
+| `GET /` | La page web |
+| `GET /api/passes?latitude=&longitude=&hours=12` | Les passages visibles des prochaines heures (1 à 48) |
+| `GET /api/identification?latitude=&longitude=&at=&direction=` | « C'était quoi, ça ? » : `at` en ISO 8601 avec fuseau, `direction` parmi N, NE, E, SE, S, SW, W, NW |
 
 ## Architecture
 
@@ -26,6 +42,7 @@ src/la_haut/
 ├── domain/          règles métier pures, aucune dépendance technique
 ├── application/     cas d'usage et ports (typing.Protocol)
 ├── infrastructure/  adaptateurs : Skyfield, fichier TLE, téléchargement CelesTrak
+├── interface/       API HTTP (FastAPI) et page web, branchées sur les cas d'usage seulement
 └── composition.py   racine de composition : branche les adaptateurs sur les cas d'usage
 ```
 
@@ -73,4 +90,4 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 - Seuls les satellites célèbres sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
 - Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
 - « C'était quoi, ça ? » ne reconnaît que les satellites célèbres : un avion, une étoile ou une planète donnent « aucun satellite connu ». L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé.
-- L'identification « c'était quoi ? », l'API et l'interface viendront dans les prochaines tranches.
+- Le JavaScript de la page n'a pas de tests automatisés : sa logique est volontairement réduite à l'affichage, le reste est testé côté Python.

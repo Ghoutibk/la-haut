@@ -1,8 +1,11 @@
 from datetime import UTC, datetime, timedelta
 
+from fastapi.testclient import TestClient
+
 from la_haut.composition import (
     build_identify_sighting_from_celestrak,
     build_list_visible_passes_from_celestrak,
+    build_web_app,
 )
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.sighting import Sighting
@@ -53,3 +56,12 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
         [candidate] = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest)
 
     assert candidate.satellite_name == ISS_NAME
+
+
+def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
+    with FakeCelestrak() as celestrak:
+        app = build_web_app(tmp_path / "visual.tle", base_url=celestrak.url)
+
+        response = TestClient(app).get("/")
+
+    assert response.status_code == 200

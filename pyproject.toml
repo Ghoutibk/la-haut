@@ -12,6 +12,8 @@ dependencies = [
     "skyfield>=1.49",
     "skyfield-data>=7.0",
     "certifi>=2024.2",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -20,10 +22,14 @@ dev = [
     "pytest-bdd>=8.0",
     "ruff>=0.6",
     "pre-commit>=4.0",
+    "httpx2>=2.13",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"la_haut.interface.http" = ["static/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
