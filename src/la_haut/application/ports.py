@@ -1,8 +1,10 @@
 """Ports : ce dont l'application a besoin, sans dire comment c'est fait."""
 
+from datetime import datetime
 from typing import Protocol
 
 from la_haut.domain.observer import Observer
+from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
@@ -23,4 +25,10 @@ class SkyTracker(Protocol):
         self, satellite: Satellite, observer: Observer, window: TimeWindow
     ) -> list[SkySample]:
         """La trace chronologique du satellite dans le ciel de l'observateur."""
+        ...
+
+
+class PlanetLocator(Protocol):
+    def locate(self, planet: Planet, observer: Observer, at: datetime) -> PlanetPosition:
+        """Où se trouve la planète dans le ciel de l'observateur à cet instant."""
         ...
