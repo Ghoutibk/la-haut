@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.sky_sample import SkySample
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +16,7 @@ class VisiblePass:
     vanishes_in: CompassPoint
     max_elevation_deg: float
     docked_with: tuple[str, ...] = ()
+    path: tuple[SkySample, ...] = ()
 
     @property
     def duration(self) -> timedelta:

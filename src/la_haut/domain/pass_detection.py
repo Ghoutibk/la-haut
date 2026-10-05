@@ -28,4 +28,5 @@ def _pass_from(satellite_name: str, run: list[SkySample]) -> VisiblePass:
         appears_in=first.direction,
         vanishes_in=last.direction,
         max_elevation_deg=max(sample.elevation_deg for sample in run),
+        path=tuple(run),
     )
