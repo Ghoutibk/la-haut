@@ -27,6 +27,11 @@ class CompassPoint(StrEnum):
         index = int((azimuth_deg + DEGREES_PER_POINT / 2) // DEGREES_PER_POINT) % len(_CLOCKWISE)
         return _CLOCKWISE[index]
 
+    @property
+    def azimuth_deg(self) -> float:
+        """L'azimut au milieu du secteur de ce point cardinal."""
+        return _CLOCKWISE.index(self) * DEGREES_PER_POINT
+
     def is_close_to(self, other: "CompassPoint") -> bool:
         """Le même point ou un de ses deux voisins : une direction donnée à l'œil, sans boussole."""
         steps_apart = abs(_CLOCKWISE.index(self) - _CLOCKWISE.index(other))

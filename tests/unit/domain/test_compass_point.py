@@ -62,3 +62,11 @@ def test_a_compass_point_is_close_to_itself_and_its_two_neighbours(first, second
 )
 def test_a_compass_point_is_not_close_to_points_further_away(first, second):
     assert not first.is_close_to(second)
+
+
+@pytest.mark.parametrize(
+    ("point", "azimuth_deg"),
+    [(CompassPoint.NORTH, 0.0), (CompassPoint.EAST, 90.0), (CompassPoint.NORTH_WEST, 315.0)],
+)
+def test_each_compass_point_points_to_the_middle_of_its_sector(point, azimuth_deg):
+    assert point.azimuth_deg == azimuth_deg
