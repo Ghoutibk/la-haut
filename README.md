@@ -4,7 +4,7 @@ Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu dep
 
 ## Ce que fait Là-haut aujourd'hui
 
-Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres : l'ISS, Tiangong et Hubble. Leurs éléments orbitaux viennent du groupe « visual » de CelesTrak, téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
+Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres (l'ISS, Tiangong et Hubble) et des trains Starlink. Les éléments orbitaux viennent de deux groupes CelesTrak, téléchargés au besoin et gardés deux heures en cache chacun : « visual » pour les satellites célèbres, « last-30-days » pour les Starlink lancés dans les 30 derniers jours. Si un groupe est injoignable et sans cache, l'autre continue d'être annoncé. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage. Les Starlink d'un même lancement qui défilent en file sur le même chemin le sont aussi, sous le nom « Train Starlink (N satellites) » : c'est la file de points que l'on prend pour des OVNI.
 
 À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi le satellite qui était là : c'est « C'était quoi, ça ? ».
 
@@ -25,7 +25,7 @@ pytest
 uvicorn --factory la_haut.composition:build_web_app --reload
 ```
 
-Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.tle` ; la variable d'environnement `LA_HAUT_CACHE` permet de le déplacer.
+Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.tle`, à côté de `last-30-days.tle` ; la variable d'environnement `LA_HAUT_CACHE` permet de déplacer les deux.
 
 | Route | Rôle |
 |---|---|
@@ -63,7 +63,11 @@ src/la_haut/
 | Directions voisines | `CompassPoint.is_close_to` | Le même point cardinal ou l'un de ses deux voisins : une direction donnée à l'œil |
 | Écart au signalement | `VisiblePass.gap_to` | Temps entre le signalement et le moment où le passage était dans cette direction, à 5 minutes près |
 | Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
+| Lancement | `TwoLineElements.launch` | L'année et le numéro du lancement (désignation internationale sans la lettre de la pièce), communs à tous les objets d'un même tir |
+| Starlink | `is_starlink`, `StarlinkCatalog` | Un satellite de la constellation Starlink, reconnu à son nom CelesTrak |
+| Train Starlink | `gather_starlink_trains`, `VisiblePass.is_starlink_train`, `train_size` | Les Starlink d'un même lancement dont les passages se chevauchent sur le même chemin : une file de points, un seul passage annoncé. À la différence d'objets amarrés, ils se suivent à quelques secondes l'un de l'autre |
 | Catalogue de satellites | `SatelliteCatalog` | Port : les satellites suivis |
+| Catalogue combiné | `CombinedSatelliteCatalog` | Plusieurs catalogues réunis, chaque numéro NORAD une seule fois ; un catalogue indisponible n'empêche pas d'annoncer les autres |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur |
 
 ## Tests
@@ -87,7 +91,8 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 
 ## Limites connues
 
-- Seuls les satellites célèbres sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
-- Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
+- Seuls les satellites célèbres et les Starlink récents sont annoncés. Le calcul de magnitude passage par passage, qui permettra d'en annoncer d'autres, reste à faire.
+- Un Starlink isolé lancé dans les 30 derniers jours est annoncé sous son nom de catalogue, sans savoir s'il est réellement assez brillant.
+- Suivre quelques centaines de Starlink sur 12 heures prend plusieurs secondes de calcul (environ 5 s pour 200 satellites sur un poste de développement) : l'onglet « Ce soir » peut être lent sur un petit serveur.
 - « C'était quoi, ça ? » ne reconnaît que les satellites célèbres : un avion, une étoile ou une planète donnent « aucun satellite connu ». L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé.
 - Le JavaScript de la page n'a pas de tests automatisés : sa logique est volontairement réduite à l'affichage, le reste est testé côté Python.
