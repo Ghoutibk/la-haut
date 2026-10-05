@@ -14,9 +14,13 @@ function roundCoordinate(value) {
   return Math.round(value * 100) / 100; // ~1 km : assez précis pour le ciel, pas plus
 }
 
+const LOCATION_PATIENCE_MS = 6000;
+
 function locateObserver() {
   return new Promise((resolve) => {
     if (!("geolocation" in navigator)) return resolve(PARIS);
+    // Sans réponse à la demande d'autorisation, on n'attend pas indéfiniment.
+    setTimeout(() => resolve(PARIS), LOCATION_PATIENCE_MS);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) =>
         resolve({
