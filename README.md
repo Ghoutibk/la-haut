@@ -2,9 +2,9 @@
 
 Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu depuis chez toi, et la réponse à « c'était quoi, cette lumière ? ».
 
-## Ce que fait cette première tranche
+## Ce que fait Là-haut aujourd'hui
 
-Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites d'un catalogue au format CelesTrak. Le calcul tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées.
+Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites les plus brillants. Le catalogue est le groupe « visual » de CelesTrak (environ 150 satellites), téléchargé au besoin et gardé deux heures en cache. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage.
 
 ## Démarrer
 
@@ -23,7 +23,7 @@ Clean Architecture : les dépendances pointent vers le domaine, jamais l'inverse
 src/la_haut/
 ├── domain/          règles métier pures, aucune dépendance technique
 ├── application/     cas d'usage et ports (typing.Protocol)
-├── infrastructure/  adaptateurs : Skyfield, fichier TLE CelesTrak
+├── infrastructure/  adaptateurs : Skyfield, fichier TLE, téléchargement CelesTrak
 └── composition.py   racine de composition : branche les adaptateurs sur les cas d'usage
 ```
 
@@ -64,6 +64,6 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 
 ## Limites connues
 
-- La luminosité n'est pas encore prise en compte : un petit satellite éclairé compte comme visible.
-- Le catalogue se lit depuis un fichier ; le téléchargement depuis CelesTrak reste à brancher.
+- La luminosité vient du choix du catalogue (les satellites les plus brillants), pas encore d'un calcul de magnitude passage par passage.
+- Les trains Starlink, absents du groupe « visual », ne sont pas encore annoncés.
 - L'identification « c'était quoi ? », l'API et l'interface viendront dans les prochaines tranches.
