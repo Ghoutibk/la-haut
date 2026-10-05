@@ -3,6 +3,7 @@ import time
 
 import pytest
 
+from la_haut.application.ports import CatalogUnavailableError
 from la_haut.infrastructure.celestrak_satellite_catalog import CelestrakSatelliteCatalog
 from tests.support.fake_celestrak import FakeCelestrak
 from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
@@ -56,3 +57,29 @@ def test_a_cache_older_than_two_hours_is_refreshed(celestrak, cache_path):
 
     assert len(celestrak.requests) == 1
     assert time.time() - cache_path.stat().st_mtime < 60
+
+
+def test_when_celestrak_fails_the_last_known_catalog_is_used(celestrak, cache_path):
+    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    celestrak.fails_with(503)
+
+    [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
+
+    assert iss.norad_id == 25544
+
+
+def test_a_response_that_is_not_a_catalog_never_replaces_the_cache(celestrak, cache_path):
+    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    celestrak.publishes("No GP data found")
+
+    [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
+
+    assert iss.norad_id == 25544
+    assert ISS_TLE_LINE_1 in cache_path.read_text("utf-8")
+
+
+def test_without_cache_nor_celestrak_the_catalog_is_unavailable(celestrak, cache_path):
+    celestrak.fails_with(503)
+
+    with pytest.raises(CatalogUnavailableError):
+        a_catalog(celestrak, cache_path).tracked_satellites()

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import certifi
 
+from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.satellite import Satellite
 from la_haut.infrastructure.tle_file_satellite_catalog import parse_three_line_catalog
 
@@ -37,7 +38,7 @@ class CelestrakSatelliteCatalog:
 
     def tracked_satellites(self) -> list[Satellite]:
         if not self._cache_is_fresh():
-            self._cache_path.write_text(self._download(), encoding="utf-8")
+            self._refresh_cache()
         return parse_three_line_catalog(self._cache_path.read_text(encoding="utf-8"))
 
     def _cache_is_fresh(self) -> bool:
@@ -45,6 +46,17 @@ class CelestrakSatelliteCatalog:
             return False
         age_s = time.time() - self._cache_path.stat().st_mtime
         return age_s < self._max_age.total_seconds()
+
+    def _refresh_cache(self) -> None:
+        try:
+            text = self._download()
+            if not parse_three_line_catalog(text):
+                raise ValueError("Catalogue vide")
+        except (OSError, ValueError) as error:
+            if self._cache_path.exists():
+                return  # le dernier catalogue connu reste valable en attendant
+            raise CatalogUnavailableError("CelesTrak injoignable et aucun cache") from error
+        self._cache_path.write_text(text, encoding="utf-8")
 
     def _download(self) -> str:
         query = urllib.parse.urlencode({"GROUP": self._group, "FORMAT": "tle"})
