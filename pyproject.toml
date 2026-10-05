@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "la-haut"
+version = "0.1.0"
+description = "Ce qui passe au-dessus de toi ce soir : satellites visibles et identification des lumières dans le ciel."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "skyfield>=1.49",
+    "skyfield-data>=7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-bdd>=8.0",
+    "ruff>=0.6",
+    "pre-commit>=4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+addopts = "--strict-markers --strict-config"
+bdd_features_base_dir = "tests/functional/features"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming : conventions de nommage
+    "UP",  # pyupgrade
+    "B",   # bugbear
+    "SIM", # simplifications (KISS)
+]
