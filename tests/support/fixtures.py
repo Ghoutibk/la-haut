@@ -1,6 +1,7 @@
 """Données réelles partagées par toutes les familles de tests (DRY)."""
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 # TLE réel de l'ISS (époque 2018-07-03), repris de la suite de tests de Skyfield.
 ISS_NAME = "ISS (ZARYA)"
@@ -49,3 +50,36 @@ STARLINK_TRAIN = (
         "2 90003  51.6414 295.8524 0003435 262.6267 202.2868 15.54005638121106",
     ),
 )
+
+# Éléments réels de l'ISS publiés par CelesTrak le 6 octobre 2026 (groupe « visual »), téléchargés
+# coup sur coup dans les deux formats : le même jeu d'éléments, en TLE et en OMM (CSV). L'OMM
+# garde un chiffre de plus sur l'excentricité et le BSTAR.
+ISS_2026_TLE_LINE_1 = "1 25544U 98067A   26279.53064673  .00004741  00000+0  94937-4 0  9991"
+ISS_2026_TLE_LINE_2 = "2 25544  51.6312 109.0734 0006869 229.7980 130.2407 15.48752789589016"
+ISS_2026_EPOCH = datetime(2026, 10, 6, 12, 44, 7, 877472, tzinfo=UTC)
+ISS_2026_OMM = {
+    "OBJECT_NAME": "ISS (ZARYA)",
+    "OBJECT_ID": "1998-067A",
+    "EPOCH": "2026-10-06T12:44:07.877472",
+    "MEAN_MOTION": "15.48752789",
+    "ECCENTRICITY": ".00068694",
+    "INCLINATION": "51.6312",
+    "RA_OF_ASC_NODE": "109.0734",
+    "ARG_OF_PERICENTER": "229.7980",
+    "MEAN_ANOMALY": "130.2407",
+    "EPHEMERIS_TYPE": "0",
+    "CLASSIFICATION_TYPE": "U",
+    "NORAD_CAT_ID": "25544",
+    "ELEMENT_SET_NO": "999",
+    "REV_AT_EPOCH": "58901",
+    "BSTAR": ".94937468E-4",
+    "MEAN_MOTION_DOT": ".4741E-4",
+    "MEAN_MOTION_DDOT": "0",
+}
+
+# Les vrais catalogues CelesTrak du 6 octobre 2026 vers 20 h UTC, au format OMM (CSV) : groupes
+# « visual » et « last-30-days ». Les objets lancés depuis mi-2026 ont des numéros NORAD au-delà
+# de 99999 ; CelesTrak ne les publie plus en TLE.
+CELESTRAK_DIR = Path(__file__).parent / "celestrak"
+VISUAL_CSV_2026 = (CELESTRAK_DIR / "visual-2026-10-06.csv").read_text("utf-8")
+LAST_30_DAYS_CSV_2026 = (CELESTRAK_DIR / "last-30-days-2026-10-06.csv").read_text("utf-8")

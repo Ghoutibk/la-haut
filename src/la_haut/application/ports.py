@@ -10,6 +10,7 @@ from la_haut.domain.satellite import Satellite
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
+from la_haut.domain.visible_pass import VisiblePass
 
 
 class CatalogUnavailableError(RuntimeError):
@@ -26,7 +27,11 @@ class SkyTracker(Protocol):
     def track(
         self, satellite: Satellite, observer: Observer, window: TimeWindow
     ) -> list[SkySample]:
-        """La trace chronologique du satellite dans le ciel de l'observateur."""
+        """La trace chronologique du satellite dans le ciel de l'observateur.
+
+        Elle peut omettre les moments où il est sous l'horizon : chaque passage reste alors bordé
+        d'un instant sous l'horizon, pour que deux passages ne se touchent jamais.
+        """
         ...
 
 
@@ -34,6 +39,12 @@ class PlanetLocator(Protocol):
     def locate(self, planet: Planet, observer: Observer, at: datetime) -> PlanetPosition:
         """Où se trouve la planète dans le ciel de l'observateur à cet instant."""
         ...
+
+
+class VisiblePassesListing(Protocol):
+    """Ce que l'interface attend de « Ce soir », calculé à chaque fois ou par créneaux."""
+
+    def execute(self, observer: Observer, window: TimeWindow) -> list[VisiblePass]: ...
 
 
 class SightingIdentification(Protocol):

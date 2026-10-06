@@ -10,6 +10,7 @@ from la_haut.application.famous_satellite_catalog import FamousSatelliteCatalog
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.list_visible_passes_by_slot import ListVisiblePassesBySlot
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.application.starlink_catalog import StarlinkCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
@@ -21,7 +22,7 @@ from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
 from la_haut.infrastructure.tle_file_satellite_catalog import TleFileSatelliteCatalog
 from la_haut.interface.http.app import create_app
 
-DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.tle"
+DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.csv"
 # Les lancements des 30 derniers jours : les Starlink qui défilent encore en train.
 RECENT_LAUNCHES_GROUP = "last-30-days"
 
@@ -44,7 +45,7 @@ def build_list_visible_passes_from_celestrak(
     """
     brightest = CelestrakSatelliteCatalog(cache_path, url_template=url_template)
     recent_launches = CelestrakSatelliteCatalog(
-        cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.tle"),
+        cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.csv"),
         group=RECENT_LAUNCHES_GROUP,
         url_template=url_template,
     )
@@ -83,4 +84,7 @@ def build_web_app(cache_path: Path | None = None, url_template: str | None = Non
     url_template = url_template or os.environ.get("LA_HAUT_CATALOG_URL", CELESTRAK_URL_TEMPLATE)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
-    return create_app(list_visible_passes, _identify_sighting(list_visible_passes))
+    # « Ce soir » se resert par quarts d'heure ; l'identification calcule au moment signalé.
+    return create_app(
+        ListVisiblePassesBySlot(list_visible_passes), _identify_sighting(list_visible_passes)
+    )

@@ -9,8 +9,11 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from la_haut.application.list_visible_passes import ListVisiblePasses
-from la_haut.application.ports import CatalogUnavailableError, SightingIdentification
+from la_haut.application.ports import (
+    CatalogUnavailableError,
+    SightingIdentification,
+    VisiblePassesListing,
+)
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import InvalidSightingError, Sighting
@@ -29,7 +32,7 @@ def _utc_now() -> datetime:
 
 
 def create_app(
-    list_visible_passes: ListVisiblePasses,
+    list_visible_passes: VisiblePassesListing,
     identify_sighting: SightingIdentification,
     clock: Callable[[], datetime] = _utc_now,
 ) -> FastAPI:

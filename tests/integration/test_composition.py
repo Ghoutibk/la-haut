@@ -32,16 +32,12 @@ def test_only_the_famous_satellites_from_celestrak_are_announced(tmp_path):
     day_after_epoch = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(days=1))
 
     with FakeCelestrak() as celestrak:
-        celestrak.publishes(
-            ISS_NAME,
-            ISS_TLE_LINE_1,
-            ISS_TLE_LINE_2,
-            DOCKED_VEHICLE_NAME,
-            DOCKED_VEHICLE_TLE_LINE_1,
-            DOCKED_VEHICLE_TLE_LINE_2,
+        celestrak.publishes_as_omm(
+            (ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2),
+            (DOCKED_VEHICLE_NAME, DOCKED_VEHICLE_TLE_LINE_1, DOCKED_VEHICLE_TLE_LINE_2),
         )
         list_visible_passes = build_list_visible_passes_from_celestrak(
-            tmp_path / "visual.tle", url_template=celestrak.url_template
+            tmp_path / "visual.csv", url_template=celestrak.url_template
         )
         [iss_pass] = list_visible_passes.execute(an_observer_in_paris(), day_after_epoch)
 
@@ -54,9 +50,9 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
     )
 
     with FakeCelestrak() as celestrak:
-        celestrak.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        celestrak.publishes_as_omm((ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2))
         identify_sighting = build_identify_sighting_from_celestrak(
-            tmp_path / "visual.tle", url_template=celestrak.url_template
+            tmp_path / "visual.csv", url_template=celestrak.url_template
         )
         best, *_ = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest).candidates
 
@@ -65,7 +61,7 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
 
 def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
     with FakeCelestrak() as celestrak:
-        app = build_web_app(tmp_path / "visual.tle", url_template=celestrak.url_template)
+        app = build_web_app(tmp_path / "visual.csv", url_template=celestrak.url_template)
 
         response = TestClient(app).get("/")
 
@@ -75,18 +71,17 @@ def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
 def test_the_recent_starlinks_from_celestrak_are_announced_as_a_train(tmp_path):
     day_after_epoch = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(days=1))
     rocket_body = (ROCKET_BODY_NAME, ROCKET_BODY_TLE_LINE_1, ROCKET_BODY_TLE_LINE_2)
-    starlinks = [line for entry in STARLINK_TRAIN for line in entry]
 
     with FakeCelestrak() as celestrak:
-        celestrak.publishes(*rocket_body, group="visual")
-        celestrak.publishes(*starlinks, *rocket_body, group="last-30-days")
+        celestrak.publishes_as_omm(rocket_body, group="visual")
+        celestrak.publishes_as_omm(*STARLINK_TRAIN, rocket_body, group="last-30-days")
         list_visible_passes = build_list_visible_passes_from_celestrak(
-            tmp_path / "visual.tle", url_template=celestrak.url_template
+            tmp_path / "visual.csv", url_template=celestrak.url_template
         )
         [train] = list_visible_passes.execute(an_observer_in_paris(), day_after_epoch)
 
     assert (train.is_starlink_train, train.train_size) == (True, 3)
-    assert (tmp_path / "last-30-days.tle").exists()
+    assert (tmp_path / "last-30-days.csv").exists()
 
 
 def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
@@ -95,9 +90,9 @@ def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
     )
 
     with FakeCelestrak() as celestrak:
-        celestrak.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        celestrak.publishes_as_omm((ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2))
         identify_sighting = build_identify_sighting_from_celestrak(
-            tmp_path / "visual.tle", url_template=celestrak.url_template
+            tmp_path / "visual.csv", url_template=celestrak.url_template
         )
         [candidate] = identify_sighting.execute(an_observer_in_paris(), venus_at_dusk).candidates
 
@@ -115,13 +110,13 @@ def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment
     }
 
     with FakeCelestrak() as relay:
-        relay.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        relay.publishes_as_omm((ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2))
         monkeypatch.setenv("LA_HAUT_CATALOG_URL", relay.relay_url_template)
-        client = TestClient(build_web_app(tmp_path / "visual.tle"))
+        client = TestClient(build_web_app(tmp_path / "visual.csv"))
         response = client.get("/api/identification", params=venus_at_dusk)
 
     assert response.json()["satellites_checked"]
     assert sorted(relay.paths) == [
-        "/releases/download/catalogues/last-30-days.tle",
-        "/releases/download/catalogues/visual.tle",
+        "/releases/download/catalogues/last-30-days.csv",
+        "/releases/download/catalogues/visual.csv",
     ]

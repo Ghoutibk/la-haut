@@ -42,9 +42,12 @@ def _join(train: VisiblePass, follower: VisiblePass) -> VisiblePass:
 
 
 def gather_starlink_trains(passes: Sequence[VisiblePass]) -> list[VisiblePass]:
-    """Les Starlink d'un même lancement qui défilent en file : un seul passage de train."""
+    """Les Starlink d'un même lancement qui défilent en file : un seul passage de train.
+
+    La file se lit dans l'ordre où les satellites passent, quel que soit l'ordre du catalogue.
+    """
     gathered: list[VisiblePass] = []
-    for visible_pass in passes:
+    for visible_pass in sorted(passes, key=lambda visible_pass: visible_pass.starts_at):
         for index, train in enumerate(gathered):
             if _follows(train, visible_pass):
                 gathered[index] = _join(train, visible_pass)

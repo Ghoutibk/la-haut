@@ -27,27 +27,30 @@ jobs:
       GH_REPO: ${{ github.repository }}
     steps:
       - name: Télécharger les catalogues CelesTrak
-        # Pas de « last-30-days » : les objets lancés depuis mi-2026 ont des numéros NORAD au-delà
-        # de 99999, que le format TLE ne sait pas écrire, et CelesTrak répond 404 pour ce groupe.
+        # Format OMM en CSV : les objets lancés depuis mi-2026 ont des numéros NORAD au-delà de
+        # 99999, que le format TLE ne sait pas écrire.
         run: |
-          for group in visual; do
+          for group in visual last-30-days; do
             curl --fail --silent --show-error --max-time 60 \
               --user-agent "la-haut (+https://github.com/${GH_REPO})" \
-              --output "${group}.tle" \
-              "https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=tle"
-            # Sans données, CelesTrak peut répondre par une phrase : on exige des éléments orbitaux.
-            if ! grep -q '^1 ' "${group}.tle" || ! grep -q '^2 ' "${group}.tle"; then
+              --output "${group}.csv" \
+              "https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=csv"
+            # Sans données, CelesTrak peut répondre par une phrase : on exige l'en-tête OMM et au
+            # moins un satellite.
+            satellites=$(tail -n +2 "${group}.csv" | grep -c . || true)
+            if ! head -n 1 "${group}.csv" | grep -q '^OBJECT_NAME,' || [ "${satellites}" -eq 0 ]; then
               echo "::error::Le groupe ${group} ne contient aucun élément orbital"
-              head -c 300 "${group}.tle"
+              head -c 300 "${group}.csv"
               exit 1
             fi
-            echo "${group} : $(grep -c '^1 ' "${group}.tle") satellites"
+            echo "${group} : ${satellites} satellites"
           done
 
       - name: Publier dans la release « catalogues »
         run: |
+          notes="Copie des groupes CelesTrak visual et last-30-days au format OMM (CSV), remplacée toutes les deux heures par le workflow « Relais des catalogues ». Le site en ligne la lit : ne pas la supprimer."
           if ! gh release view catalogues > /dev/null 2>&1; then
-            gh release create catalogues --latest=false --title "Catalogues CelesTrak" \
-              --notes "Copie du groupe CelesTrak visual, remplacée toutes les deux heures par le workflow « Relais des catalogues ». Le site en ligne la lit : ne pas la supprimer."
+            gh release create catalogues --latest=false --title "Catalogues CelesTrak" --notes "${notes}"
           fi
-          gh release upload catalogues visual.tle --clobber
+          gh release edit catalogues --notes "${notes}"
+          gh release upload catalogues visual.csv last-30-days.csv --clobber

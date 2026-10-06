@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from la_haut.domain.orbit_mean_elements import OrbitMeanElements
+
 TLE_LINE_LENGTH = 69
 CHECKSUM_INDEX = 68
 CATALOG_NUMBER = slice(2, 7)
@@ -49,10 +51,10 @@ class TwoLineElements:
 
 @dataclass(frozen=True, slots=True)
 class Satellite:
-    """Un objet en orbite que l'on peut suivre dans le ciel."""
+    """Un objet en orbite que l'on peut suivre dans le ciel, connu par ses TLE ou son OMM."""
 
     name: str
-    elements: TwoLineElements
+    elements: TwoLineElements | OrbitMeanElements
 
     @property
     def norad_id(self) -> int:

@@ -35,6 +35,12 @@ def catalog_path(tmp_path):
 
 
 @pytest.fixture
+def list_visible_passes(catalog_path):
+    """Par défaut, parmi les satellites du catalogue local."""
+    return build_list_visible_passes(catalog_path)
+
+
+@pytest.fixture
 def identify_sighting(catalog_path):
     """Par défaut, parmi les satellites du catalogue local et les planètes."""
     return build_identify_sighting(catalog_path)
@@ -44,12 +50,12 @@ def identify_sighting(catalog_path):
     parsers.parse("je cherche les passages visibles du {start} au {end}"),
     target_fixture="passes",
 )
-def search_visible_passes(observer, catalog_path, start, end):
+def search_visible_passes(observer, list_visible_passes, start, end):
     window = TimeWindow(
         starts_at=paris_instant_from_hour_text(start),
         ends_at=paris_instant_from_hour_text(end),
     )
-    return build_list_visible_passes(catalog_path).execute(observer, window)
+    return list_visible_passes.execute(observer, window)
 
 
 @when(

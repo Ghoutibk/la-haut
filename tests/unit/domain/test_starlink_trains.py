@@ -96,3 +96,16 @@ def test_starlinks_of_one_launch_at_very_different_heights_stay_separate():
     high = a_starlink_pass("STARLINK-2", FIFTEEN_SECONDS, max_elevation_deg=40.0)
 
     assert gather_starlink_trains([low, high]) == [low, high]
+
+
+def test_the_trains_do_not_depend_on_the_order_the_passes_come_in():
+    # Chaque satellite passe un peu plus haut que le précédent, comme quand la Terre tourne sous
+    # la file : le premier et le dernier sont à 8° l'un de l'autre, mais chacun suit le précédent.
+    first = a_starlink_pass("STARLINK-1", max_elevation_deg=30.0)
+    second = a_starlink_pass("STARLINK-2", ONE_MINUTE, max_elevation_deg=34.0)
+    last = a_starlink_pass("STARLINK-3", 2 * ONE_MINUTE, max_elevation_deg=38.0)
+
+    [train] = gather_starlink_trains([last, first, second])
+
+    assert train.train_size == 3
+    assert train.starts_at == first.starts_at
