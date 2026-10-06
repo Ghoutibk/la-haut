@@ -1,0 +1,17 @@
+# Seul le paquet est utile à l'image : ni tests, ni environnement local, ni caches.
+.git
+.github
+.venv
+.claude
+tests
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.ruff_cache
+*.egg-info
+build
+dist
+*.tle
+Dockerfile
+.dockerignore
+render.yaml

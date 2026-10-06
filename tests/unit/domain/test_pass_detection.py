@@ -63,3 +63,11 @@ def test_a_pass_keeps_its_visible_path_through_the_sky():
     [visible_pass] = detect(track)
 
     assert visible_pass.path == (track[1], track[2])
+
+
+def test_each_pass_remembers_the_launch_of_its_satellite():
+    [visible_pass] = detect_visible_passes(
+        "STARLINK-90001", a_track({}, {}), NakedEyeVisibility(), launch="18999"
+    )
+
+    assert visible_pass.launch == "18999"

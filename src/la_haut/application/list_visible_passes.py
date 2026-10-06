@@ -2,6 +2,7 @@ from la_haut.application.ports import SatelliteCatalog, SkyTracker
 from la_haut.domain.docked_passes import merge_docked_passes
 from la_haut.domain.observer import Observer
 from la_haut.domain.pass_detection import detect_visible_passes
+from la_haut.domain.starlink_trains import gather_starlink_trains
 from la_haut.domain.time_window import TimeWindow
 from la_haut.domain.visibility import NakedEyeVisibility
 from la_haut.domain.visible_pass import VisiblePass
@@ -28,6 +29,9 @@ class ListVisiblePasses:
                 satellite.name,
                 self._tracker.track(satellite, observer, window),
                 self._visibility,
+                launch=satellite.elements.launch,
             )
         ]
-        return sorted(merge_docked_passes(passes), key=lambda visible_pass: visible_pass.starts_at)
+        # Les trains d'abord : des Starlink serrés dans leur file ne sont pas des objets amarrés.
+        announced = merge_docked_passes(gather_starlink_trains(passes))
+        return sorted(announced, key=lambda visible_pass: visible_pass.starts_at)

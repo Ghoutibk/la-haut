@@ -8,6 +8,7 @@ from la_haut.composition import (
     build_web_app,
 )
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.planet import Planet
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
 from tests.support.builders import an_observer_in_paris
@@ -20,6 +21,10 @@ from tests.support.fixtures import (
     ISS_TLE_EPOCH,
     ISS_TLE_LINE_1,
     ISS_TLE_LINE_2,
+    ROCKET_BODY_NAME,
+    ROCKET_BODY_TLE_LINE_1,
+    ROCKET_BODY_TLE_LINE_2,
+    STARLINK_TRAIN,
 )
 
 
@@ -53,9 +58,9 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
         identify_sighting = build_identify_sighting_from_celestrak(
             tmp_path / "visual.tle", base_url=celestrak.url
         )
-        [candidate] = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest)
+        best, *_ = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest)
 
-    assert candidate.satellite_name == ISS_NAME
+    assert best.satellite_name == ISS_NAME
 
 
 def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
@@ -65,3 +70,35 @@ def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
         response = TestClient(app).get("/")
 
     assert response.status_code == 200
+
+
+def test_the_recent_starlinks_from_celestrak_are_announced_as_a_train(tmp_path):
+    day_after_epoch = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(days=1))
+    rocket_body = (ROCKET_BODY_NAME, ROCKET_BODY_TLE_LINE_1, ROCKET_BODY_TLE_LINE_2)
+    starlinks = [line for entry in STARLINK_TRAIN for line in entry]
+
+    with FakeCelestrak() as celestrak:
+        celestrak.publishes(*rocket_body, group="visual")
+        celestrak.publishes(*starlinks, *rocket_body, group="last-30-days")
+        list_visible_passes = build_list_visible_passes_from_celestrak(
+            tmp_path / "visual.tle", base_url=celestrak.url
+        )
+        [train] = list_visible_passes.execute(an_observer_in_paris(), day_after_epoch)
+
+    assert (train.is_starlink_train, train.train_size) == (True, 3)
+    assert (tmp_path / "last-30-days.tle").exists()
+
+
+def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
+    venus_at_dusk = Sighting(
+        at=datetime(2018, 7, 3, 20, 45, tzinfo=UTC), direction=CompassPoint.WEST
+    )
+
+    with FakeCelestrak() as celestrak:
+        celestrak.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        identify_sighting = build_identify_sighting_from_celestrak(
+            tmp_path / "visual.tle", base_url=celestrak.url
+        )
+        [candidate] = identify_sighting.execute(an_observer_in_paris(), venus_at_dusk)
+
+    assert candidate.planet == Planet.VENUS

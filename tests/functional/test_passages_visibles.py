@@ -1,20 +1,13 @@
 from datetime import time, timedelta
 
-from pytest_bdd import given, parsers, scenarios, then, when
+from pytest_bdd import given, scenarios, then
 
-from la_haut.composition import build_list_visible_passes
-from la_haut.domain.time_window import TimeWindow
 from tests.support.fixtures import (
     DOCKED_VEHICLE_NAME,
     DOCKED_VEHICLE_TLE_LINE_1,
     DOCKED_VEHICLE_TLE_LINE_2,
 )
-from tests.support.french import (
-    DIRECTIONS,
-    french_date,
-    paris_instant,
-    paris_instant_from_hour_text,
-)
+from tests.support.french import DIRECTIONS, french_date, paris_instant
 
 scenarios("passages_visibles.feature")
 
@@ -26,18 +19,6 @@ def a_docked_vehicle_in_the_catalog(catalog_path):
     entry = [DOCKED_VEHICLE_NAME, DOCKED_VEHICLE_TLE_LINE_1, DOCKED_VEHICLE_TLE_LINE_2]
     with catalog_path.open("a", encoding="utf-8") as catalog:
         catalog.write("\n".join(entry) + "\n")
-
-
-@when(
-    parsers.parse("je cherche les passages visibles du {start} au {end}"),
-    target_fixture="passes",
-)
-def search_visible_passes(observer, catalog_path, start, end):
-    window = TimeWindow(
-        starts_at=paris_instant_from_hour_text(start),
-        ends_at=paris_instant_from_hour_text(end),
-    )
-    return build_list_visible_passes(catalog_path).execute(observer, window)
 
 
 @then("je ne vois aucun passage")

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 TLE_LINE_LENGTH = 69
 CHECKSUM_INDEX = 68
 CATALOG_NUMBER = slice(2, 7)
+# Désignation internationale (colonnes 10 à 17) sans la lettre de la pièce : année et numéro.
+LAUNCH = slice(9, 14)
 
 
 class InvalidTwoLineElementsError(ValueError):
@@ -38,6 +40,11 @@ class TwoLineElements:
     @property
     def norad_id(self) -> int:
         return int(self.line_1[CATALOG_NUMBER])
+
+    @property
+    def launch(self) -> str:
+        """Le lancement qui a mis l'objet en orbite, commun à toutes ses pièces."""
+        return self.line_1[LAUNCH]
 
 
 @dataclass(frozen=True, slots=True)

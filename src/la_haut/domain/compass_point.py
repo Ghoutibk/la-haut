@@ -24,12 +24,19 @@ class CompassPoint(StrEnum):
     def from_azimuth(cls, azimuth_deg: float) -> "CompassPoint":
         if not 0 <= azimuth_deg < FULL_TURN_DEG:
             raise InvalidAzimuthError(f"Azimut hors de [0, 360[ : {azimuth_deg}")
-        points = list(cls)
-        index = int((azimuth_deg + DEGREES_PER_POINT / 2) // DEGREES_PER_POINT) % len(points)
-        return points[index]
+        index = int((azimuth_deg + DEGREES_PER_POINT / 2) // DEGREES_PER_POINT) % len(_CLOCKWISE)
+        return _CLOCKWISE[index]
+
+    @property
+    def azimuth_deg(self) -> float:
+        """L'azimut au milieu du secteur de ce point cardinal."""
+        return _CLOCKWISE.index(self) * DEGREES_PER_POINT
 
     def is_close_to(self, other: "CompassPoint") -> bool:
         """Le même point ou un de ses deux voisins : une direction donnée à l'œil, sans boussole."""
-        points = list(CompassPoint)
-        steps_apart = abs(points.index(self) - points.index(other))
-        return min(steps_apart, len(points) - steps_apart) <= 1
+        steps_apart = abs(_CLOCKWISE.index(self) - _CLOCKWISE.index(other))
+        return min(steps_apart, len(_CLOCKWISE) - steps_apart) <= 1
+
+
+# Calculé une fois : chaque trace de satellite demande des milliers de directions.
+_CLOCKWISE = tuple(CompassPoint)

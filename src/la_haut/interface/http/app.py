@@ -9,14 +9,13 @@ from fastapi import FastAPI, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.list_visible_passes import ListVisiblePasses
-from la_haut.application.ports import CatalogUnavailableError
+from la_haut.application.ports import CatalogUnavailableError, SightingIdentification
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import InvalidSightingError, Sighting
 from la_haut.domain.time_window import TimeWindow
-from la_haut.interface.http.presenters import present_pass
+from la_haut.interface.http.presenters import present_candidate, present_pass
 
 Latitude = Annotated[float, Query(ge=-90, le=90)]
 Longitude = Annotated[float, Query(ge=-180, le=180)]
@@ -31,7 +30,7 @@ def _utc_now() -> datetime:
 
 def create_app(
     list_visible_passes: ListVisiblePasses,
-    identify_sighting: IdentifySighting,
+    identify_sighting: SightingIdentification,
     clock: Callable[[], datetime] = _utc_now,
 ) -> FastAPI:
     app = FastAPI(title="Là-haut")
@@ -40,6 +39,11 @@ def create_app(
     @app.get("/", include_in_schema=False)
     def web_page() -> FileResponse:
         return FileResponse(STATIC_DIR / "index.html")
+
+    @app.get("/health", include_in_schema=False)
+    def health() -> dict:
+        """Pour l'hébergeur : le service répond, sans rien calculer ni télécharger."""
+        return {"status": "ok"}
 
     @app.exception_handler(InvalidSightingError)
     def reject_invalid_sighting(_: Request, error: InvalidSightingError) -> JSONResponse:
@@ -71,7 +75,10 @@ def create_app(
         observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
         sighting = Sighting(at=at, direction=direction)
         return {
-            "candidates": [present_pass(p) for p in identify_sighting.execute(observer, sighting)]
+            "candidates": [
+                present_candidate(candidate)
+                for candidate in identify_sighting.execute(observer, sighting)
+            ]
         }
 
     return app

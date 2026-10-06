@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
+from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite, TwoLineElements
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
@@ -44,6 +45,18 @@ def a_visible_pass(**overrides) -> VisiblePass:
         max_elevation_deg=17.0,
     )
     return replace(visible_pass, **overrides)
+
+
+def a_planet_position(**overrides) -> PlanetPosition:
+    """Vénus à l'ouest, à 12° au-dessus de l'horizon, dans un ciel assez sombre."""
+    position = PlanetPosition(
+        planet=Planet.VENUS,
+        at=DEFAULT_INSTANT,
+        azimuth_deg=270.0,
+        elevation_deg=12.0,
+        sun_elevation_deg=-8.0,
+    )
+    return replace(position, **overrides)
 
 
 def a_satellite(

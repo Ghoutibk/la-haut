@@ -18,6 +18,17 @@ class VisiblePass:
     max_elevation_deg: float
     docked_with: tuple[str, ...] = ()
     path: tuple[SkySample, ...] = ()
+    launch: str = ""
+    train_followers: tuple[str, ...] = ()
+
+    @property
+    def is_starlink_train(self) -> bool:
+        """Une file de Starlink d'un même lancement, annoncée comme un seul passage."""
+        return bool(self.train_followers)
+
+    @property
+    def train_size(self) -> int:
+        return 1 + len(self.train_followers)
 
     @property
     def duration(self) -> timedelta:

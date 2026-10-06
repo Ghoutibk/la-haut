@@ -1,7 +1,13 @@
 import pytest
 
 from la_haut.domain.satellite import InvalidTwoLineElementsError, Satellite, TwoLineElements
-from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
+from tests.support.fixtures import (
+    ISS_NAME,
+    ISS_TLE_LINE_1,
+    ISS_TLE_LINE_2,
+    STARLINK_TRAIN,
+    STARLINK_TRAIN_LAUNCH,
+)
 
 ISS_ELEMENTS = TwoLineElements(ISS_TLE_LINE_1, ISS_TLE_LINE_2)
 
@@ -36,3 +42,13 @@ def test_elements_mixing_two_satellites_are_rejected():
 
     with pytest.raises(InvalidTwoLineElementsError):
         TwoLineElements(ISS_TLE_LINE_1, line_2_of_another_satellite)
+
+
+def test_the_launch_is_read_from_the_international_designator_without_the_piece_letter():
+    assert ISS_ELEMENTS.launch == "98067"
+
+
+def test_satellites_of_the_same_launch_share_it():
+    launches = {TwoLineElements(line_1, line_2).launch for _, line_1, line_2 in STARLINK_TRAIN}
+
+    assert launches == {STARLINK_TRAIN_LAUNCH}

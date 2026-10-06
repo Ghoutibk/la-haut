@@ -75,6 +75,12 @@ function isToday(date) {
   return date.toDateString() === new Date().toDateString();
 }
 
+const TRAIN_EXPLANATION =
+  "Une file de points brillants qui se suivent : les satellites Starlink d'un même lancement, quelques jours après leur mise en orbite.";
+
+const PLANET_EXPLANATION =
+  "Une planète ne bouge pas en quelques minutes : elle reste au même endroit parmi les étoiles. Si ta lumière filait dans le ciel, c'était plutôt un satellite ou un avion.";
+
 function renderPass(pass) {
   const start = new Date(pass.starts_at);
   const item = element("li", "pass");
@@ -88,6 +94,7 @@ function renderPass(pass) {
     element("div", "pass-meta", route(pass)),
     element("div", "pass-extra", `Au plus haut à ${pass.max_elevation_deg}° au-dessus de l'horizon`),
   );
+  if (pass.kind === "train") details.append(element("div", "pass-meta", TRAIN_EXPLANATION));
 
   item.append(time, details);
   return item;
@@ -101,7 +108,7 @@ async function showTonight() {
   try {
     const { passes } = await getJson("/api/passes", { hours: 12 });
     status.textContent = passes.length
-      ? "Les satellites célèbres visibles à l'œil nu dans les 12 prochaines heures."
+      ? "Les satellites célèbres et les trains Starlink visibles à l'œil nu dans les 12 prochaines heures."
       : "Aucun passage visible dans les 12 prochaines heures. Les satellites se voient surtout peu après le coucher du soleil et avant l'aube.";
     list.append(...passes.map(renderPass));
   } catch (error) {
@@ -113,13 +120,29 @@ function renderIdentification(candidates) {
   const result = $("#identify-result");
   if (!candidates.length) {
     result.replaceChildren(
-      element("p", "eyebrow", "Aucun satellite connu"),
-      element("h2", null, "Pas un satellite célèbre"),
-      element("p", null, "Rien de connu n'était dans cette direction à ce moment. C'était peut-être un avion, une étoile ou une planète."),
+      element("p", "eyebrow", "Rien de connu"),
+      element("h2", null, "Ni satellite ni planète"),
+      element("p", null, "Aucun satellite suivi ni aucune planète brillante n'était dans cette direction à ce moment. C'était peut-être un avion ou une étoile."),
     );
     return;
   }
   const [best, ...others] = candidates;
+  if (best.kind === "planet") {
+    result.replaceChildren(
+      element("p", "eyebrow", "C'était très probablement"),
+      element("h2", null, best.name),
+      element("p", null, `${best.name} brillait ${towardThe(best.direction.label)}, à ${best.elevation_deg}° au-dessus de l'horizon.`),
+      element("p", null, PLANET_EXPLANATION),
+    );
+  } else {
+    renderPassIdentification(result, best);
+  }
+  if (others.length) {
+    result.append(element("p", null, `Ou peut-être : ${others.map((candidate) => candidate.name).join(", ")}.`));
+  }
+}
+
+function renderPassIdentification(result, best) {
   const start = new Date(best.starts_at);
   const end = new Date(best.ends_at);
   result.replaceChildren(
@@ -128,9 +151,7 @@ function renderIdentification(candidates) {
     element("p", null, `Visible de ${timeFormat.format(start)} à ${timeFormat.format(end)}, ${fromThe(best.appears_in.label)} ${towardThe(best.vanishes_in.label)}.`),
     element("p", null, `Au plus haut à ${best.max_elevation_deg}° au-dessus de l'horizon.`),
   );
-  if (others.length) {
-    result.append(element("p", null, `Ou peut-être : ${others.map((pass) => pass.name).join(", ")}.`));
-  }
+  if (best.kind === "train") result.append(element("p", null, TRAIN_EXPLANATION));
 }
 
 // ---------- Formulaire « C'était quoi, ça ? » ----------

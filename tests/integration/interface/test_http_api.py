@@ -4,27 +4,40 @@ import pytest
 from fastapi.testclient import TestClient
 
 from la_haut.application.identify_sighting import IdentifySighting
+from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
-from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.observer import Observer
+from la_haut.domain.planet import Planet
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
-from tests.support.builders import DEFAULT_INSTANT, ONE_MINUTE, a_satellite, a_track
-from tests.support.fakes import FakeSatelliteCatalog, FakeSkyTracker
+from tests.support.builders import (
+    DEFAULT_INSTANT,
+    ONE_MINUTE,
+    a_planet_position,
+    a_satellite,
+    a_track,
+)
+from tests.support.fakes import (
+    FakePlanetLocator,
+    FakeSatelliteCatalog,
+    FakeSkyTracker,
+    UnavailableSatelliteCatalog,
+)
 
 PARIS = {"latitude": 48.8566, "longitude": 2.3522}
 WEST = {"azimuth_deg": 270.0}
 
 
-def a_client(tracks_by_name, tracker=None):
+def a_client(tracks_by_name, tracker=None, planets=()):
     tracker = tracker or FakeSkyTracker(tracks_by_name)
     satellites = [a_satellite(name) for name in tracks_by_name]
     list_visible_passes = ListVisiblePasses(
         catalog=FakeSatelliteCatalog(satellites), tracker=tracker
     )
-    app = create_app(
-        list_visible_passes, IdentifySighting(list_visible_passes), clock=lambda: DEFAULT_INSTANT
+    identify_sighting = IdentifySightingWithPlanets(
+        IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
     )
+    app = create_app(list_visible_passes, identify_sighting, clock=lambda: DEFAULT_INSTANT)
     return TestClient(app)
 
 
@@ -76,6 +89,19 @@ def test_a_sighting_is_identified_over_http():
     assert candidate["satellite"] == "ISS (ZARYA)"
 
 
+def test_each_candidate_says_whether_it_is_a_satellite_or_a_planet():
+    seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
+    venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=270.0)
+
+    response = a_client({"ISS (ZARYA)": a_track(WEST, WEST, WEST)}, planets=[venus]).get(
+        "/api/identification", params=seen
+    )
+
+    satellite, planet = response.json()["candidates"]
+    assert satellite["kind"] == "satellite"
+    assert (planet["kind"], planet["name"]) == ("planet", "Vénus")
+
+
 def test_a_sighting_matching_no_satellite_gives_no_candidate():
     seen = {**PARIS, "at": DEFAULT_INSTANT.isoformat(), "direction": "N"}
 
@@ -100,21 +126,25 @@ def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
     assert response.status_code == 422
 
 
-class UnavailableCatalog:
-    def tracked_satellites(self):
-        raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
+def a_client_without_catalog():
+    list_visible_passes = ListVisiblePasses(
+        catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
+    )
+    return TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
 
 
 def test_the_api_says_so_when_no_catalog_is_available():
-    list_visible_passes = ListVisiblePasses(
-        catalog=UnavailableCatalog(), tracker=FakeSkyTracker({})
-    )
-    client = TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
-
-    response = client.get("/api/passes", params=PARIS)
+    response = a_client_without_catalog().get("/api/passes", params=PARIS)
 
     assert response.status_code == 503
     assert "catalogue" in response.json()["detail"]
+
+
+def test_the_health_check_answers_without_computing_anything():
+    response = a_client_without_catalog().get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 
 
 def test_the_web_page_is_served_at_the_root():
