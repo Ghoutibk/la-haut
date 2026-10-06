@@ -27,7 +27,11 @@ class SkyTracker(Protocol):
     def track(
         self, satellite: Satellite, observer: Observer, window: TimeWindow
     ) -> list[SkySample]:
-        """La trace chronologique du satellite dans le ciel de l'observateur."""
+        """La trace chronologique du satellite dans le ciel de l'observateur.
+
+        Elle peut omettre les moments où il est sous l'horizon : chaque passage reste alors bordé
+        d'un instant sous l'horizon, pour que deux passages ne se touchent jamais.
+        """
         ...
 
 
