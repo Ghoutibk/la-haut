@@ -1,5 +1,6 @@
 import os
 import time
+from datetime import timedelta
 
 import pytest
 
@@ -83,3 +84,41 @@ def test_without_cache_nor_celestrak_the_catalog_is_unavailable(celestrak, cache
 
     with pytest.raises(CatalogUnavailableError):
         a_catalog(celestrak, cache_path).tracked_satellites()
+
+
+def test_after_a_failure_celestrak_is_left_alone_until_the_retry_delay(celestrak, cache_path):
+    celestrak.fails_with(503)
+    catalog = a_catalog(celestrak, cache_path)
+
+    for _ in range(2):
+        with pytest.raises(CatalogUnavailableError):
+            catalog.tracked_satellites()
+
+    assert len(celestrak.requests) == 1
+
+
+def test_after_a_failure_the_last_known_catalog_answers_without_asking_again(celestrak, cache_path):
+    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    celestrak.fails_with(503)
+    catalog = a_catalog(celestrak, cache_path)
+
+    catalog.tracked_satellites()
+    [iss] = catalog.tracked_satellites()
+
+    assert iss.norad_id == 25544
+    assert len(celestrak.requests) == 1
+
+
+def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_path):
+    celestrak.fails_with(503)
+    catalog = CelestrakSatelliteCatalog(
+        cache_path, base_url=celestrak.url, retry_delay=timedelta(0)
+    )
+    with pytest.raises(CatalogUnavailableError):
+        catalog.tracked_satellites()
+    celestrak.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+
+    [iss] = catalog.tracked_satellites()
+
+    assert iss.norad_id == 25544
+    assert len(celestrak.requests) == 2
