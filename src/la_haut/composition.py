@@ -72,14 +72,15 @@ def build_identify_sighting_from_celestrak(
     return _identify_sighting(build_list_visible_passes_from_celestrak(cache_path, url_template))
 
 
-def build_web_app(
-    cache_path: Path | None = None, url_template: str = CELESTRAK_URL_TEMPLATE
-) -> FastAPI:
+def build_web_app(cache_path: Path | None = None, url_template: str | None = None) -> FastAPI:
     """Le site Là-haut : uvicorn --factory la_haut.composition:build_web_app
 
-    Le cache CelesTrak se règle avec la variable d'environnement LA_HAUT_CACHE.
+    Le cache CelesTrak se règle avec la variable d'environnement LA_HAUT_CACHE. La source des
+    catalogues se règle avec LA_HAUT_CATALOG_URL, une adresse où {group} est remplacé par le nom
+    du groupe : CelesTrak par défaut, ou un relais qui le recopie.
     """
     cache_path = cache_path or Path(os.environ.get("LA_HAUT_CACHE", DEFAULT_CACHE_PATH))
+    url_template = url_template or os.environ.get("LA_HAUT_CATALOG_URL", CELESTRAK_URL_TEMPLATE)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
     return create_app(list_visible_passes, _identify_sighting(list_visible_passes))

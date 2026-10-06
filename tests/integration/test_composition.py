@@ -102,3 +102,26 @@ def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
         [candidate] = identify_sighting.execute(an_observer_in_paris(), venus_at_dusk).candidates
 
     assert candidate.planet == Planet.VENUS
+
+
+def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment(
+    tmp_path, monkeypatch
+):
+    venus_at_dusk = {
+        "latitude": 48.8566,
+        "longitude": 2.3522,
+        "at": "2018-07-03T22:45:00+02:00",
+        "direction": "W",
+    }
+
+    with FakeCelestrak() as relay:
+        relay.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        monkeypatch.setenv("LA_HAUT_CATALOG_URL", relay.relay_url_template)
+        client = TestClient(build_web_app(tmp_path / "visual.tle"))
+        response = client.get("/api/identification", params=venus_at_dusk)
+
+    assert response.json()["satellites_checked"]
+    assert sorted(relay.paths) == [
+        "/releases/download/catalogues/last-30-days.tle",
+        "/releases/download/catalogues/visual.tle",
+    ]
