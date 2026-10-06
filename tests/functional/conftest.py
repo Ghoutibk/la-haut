@@ -2,7 +2,8 @@
 
 from datetime import time
 
-from pytest_bdd import given, parsers, when
+import pytest
+from pytest_bdd import given, parsers, then, when
 
 from la_haut.composition import build_identify_sighting, build_list_visible_passes
 from la_haut.domain.sighting import Sighting
@@ -11,6 +12,7 @@ from tests.support.builders import an_observer_in_paris
 from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
 from tests.support.french import (
     DIRECTIONS,
+    PLANETS,
     french_date,
     paris_instant,
     paris_instant_from_hour_text,
@@ -32,6 +34,12 @@ def catalog_path(tmp_path):
     return path
 
 
+@pytest.fixture
+def identify_sighting(catalog_path):
+    """Par défaut, parmi les satellites du catalogue local et les planètes."""
+    return build_identify_sighting(catalog_path)
+
+
 @when(
     parsers.parse("je cherche les passages visibles du {start} au {end}"),
     target_fixture="passes",
@@ -48,9 +56,14 @@ def search_visible_passes(observer, catalog_path, start, end):
     parsers.parse("j'ai vu une lumière le {day} à {clock}, direction {direction}"),
     target_fixture="identification",
 )
-def report_a_sighting(observer, catalog_path, day, clock, direction):
+def report_a_sighting(observer, identify_sighting, day, clock, direction):
     sighting = Sighting(
         at=paris_instant(french_date(day), time.fromisoformat(clock)),
         direction=DIRECTIONS[direction],
     )
-    return build_identify_sighting(catalog_path).execute(observer, sighting)
+    return identify_sighting.execute(observer, sighting)
+
+
+@then(parsers.parse("la lumière était la planète {planet_name}"))
+def it_was_the_planet(identification, planet_name):
+    assert getattr(identification.candidates[0], "planet", None) == PLANETS[planet_name]
