@@ -13,7 +13,7 @@ from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.application.starlink_catalog import StarlinkCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
-    CELESTRAK_GP_URL,
+    CELESTRAK_URL_TEMPLATE,
     CelestrakSatelliteCatalog,
 )
 from la_haut.infrastructure.skyfield_planet_locator import SkyfieldPlanetLocator
@@ -36,17 +36,17 @@ def build_list_visible_passes(catalog_path: Path) -> ListVisiblePasses:
 
 
 def build_list_visible_passes_from_celestrak(
-    cache_path: Path, base_url: str = CELESTRAK_GP_URL
+    cache_path: Path, url_template: str = CELESTRAK_URL_TEMPLATE
 ) -> ListVisiblePasses:
     """Les satellites célèbres et les Starlink récents, tenus à jour depuis CelesTrak.
 
     Chaque groupe a son propre cache, dans le dossier de `cache_path`.
     """
-    brightest = CelestrakSatelliteCatalog(cache_path, base_url=base_url)
+    brightest = CelestrakSatelliteCatalog(cache_path, url_template=url_template)
     recent_launches = CelestrakSatelliteCatalog(
         cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.tle"),
         group=RECENT_LAUNCHES_GROUP,
-        base_url=base_url,
+        url_template=url_template,
     )
     catalog = CombinedSatelliteCatalog(
         FamousSatelliteCatalog(brightest), StarlinkCatalog(recent_launches)
@@ -66,18 +66,20 @@ def build_identify_sighting(catalog_path: Path) -> IdentifySightingWithPlanets:
 
 
 def build_identify_sighting_from_celestrak(
-    cache_path: Path, base_url: str = CELESTRAK_GP_URL
+    cache_path: Path, url_template: str = CELESTRAK_URL_TEMPLATE
 ) -> IdentifySightingWithPlanets:
     """« C'était quoi, ça ? » parmi les satellites suivis depuis CelesTrak et les planètes."""
-    return _identify_sighting(build_list_visible_passes_from_celestrak(cache_path, base_url))
+    return _identify_sighting(build_list_visible_passes_from_celestrak(cache_path, url_template))
 
 
-def build_web_app(cache_path: Path | None = None, base_url: str = CELESTRAK_GP_URL) -> FastAPI:
+def build_web_app(
+    cache_path: Path | None = None, url_template: str = CELESTRAK_URL_TEMPLATE
+) -> FastAPI:
     """Le site Là-haut : uvicorn --factory la_haut.composition:build_web_app
 
     Le cache CelesTrak se règle avec la variable d'environnement LA_HAUT_CACHE.
     """
     cache_path = cache_path or Path(os.environ.get("LA_HAUT_CACHE", DEFAULT_CACHE_PATH))
     cache_path.parent.mkdir(parents=True, exist_ok=True)
-    list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, base_url)
+    list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
     return create_app(list_visible_passes, _identify_sighting(list_visible_passes))

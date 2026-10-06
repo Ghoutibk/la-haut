@@ -29,7 +29,8 @@ class FakeCelestrak:
                 pass
 
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.url = f"http://127.0.0.1:{self._server.server_port}/NORAD/elements/gp.php"
+        base = f"http://127.0.0.1:{self._server.server_port}"
+        self.url_template = base + "/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
 
     def __enter__(self) -> "FakeCelestrak":
         threading.Thread(target=self._server.serve_forever, daemon=True).start()

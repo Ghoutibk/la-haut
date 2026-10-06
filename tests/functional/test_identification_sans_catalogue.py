@@ -16,7 +16,9 @@ def celestrak():
 @given("Là-haut n'a jamais pu joindre CelesTrak", target_fixture="identify_sighting")
 def celestrak_never_reached(celestrak, tmp_path):
     celestrak.fails_with(503)
-    return build_identify_sighting_from_celestrak(tmp_path / "visual.tle", base_url=celestrak.url)
+    return build_identify_sighting_from_celestrak(
+        tmp_path / "visual.tle", url_template=celestrak.url_template
+    )
 
 
 @then("les satellites n'ont pas pu être vérifiés")
