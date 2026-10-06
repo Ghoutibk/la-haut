@@ -8,6 +8,7 @@ from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
+from la_haut.domain.visible_pass import VisiblePass
 
 
 class FakeSatelliteCatalog:
@@ -37,6 +38,18 @@ class UnavailableSatelliteCatalog:
 
     def tracked_satellites(self) -> list[Satellite]:
         raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
+
+
+class FakeVisiblePassesListing:
+    """Renvoie toujours les mêmes passages et retient chaque calcul demandé."""
+
+    def __init__(self, passes: list[VisiblePass]) -> None:
+        self._passes = passes
+        self.requests: list[tuple[Observer, TimeWindow]] = []
+
+    def execute(self, observer: Observer, window: TimeWindow) -> list[VisiblePass]:
+        self.requests.append((observer, window))
+        return list(self._passes)
 
 
 class FakePlanetLocator:

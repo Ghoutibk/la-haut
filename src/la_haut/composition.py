@@ -10,6 +10,7 @@ from la_haut.application.famous_satellite_catalog import FamousSatelliteCatalog
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.list_visible_passes_by_slot import ListVisiblePassesBySlot
 from la_haut.application.ports import SatelliteCatalog
 from la_haut.application.starlink_catalog import StarlinkCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
@@ -83,4 +84,7 @@ def build_web_app(cache_path: Path | None = None, url_template: str | None = Non
     url_template = url_template or os.environ.get("LA_HAUT_CATALOG_URL", CELESTRAK_URL_TEMPLATE)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
-    return create_app(list_visible_passes, _identify_sighting(list_visible_passes))
+    # « Ce soir » se resert par quarts d'heure ; l'identification calcule au moment signalé.
+    return create_app(
+        ListVisiblePassesBySlot(list_visible_passes), _identify_sighting(list_visible_passes)
+    )
