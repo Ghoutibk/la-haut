@@ -1,7 +1,11 @@
-"""Un faux CelesTrak sur localhost : de vraies requêtes HTTP, sans dépendre du réseau."""
+"""Un faux CelesTrak sur localhost : de vraies requêtes HTTP, sans dépendre du réseau.
+
+Il joue aussi le relais des catalogues, qui sert chaque groupe dans un fichier <groupe>.tle.
+"""
 
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import PurePosixPath
 from urllib.parse import parse_qs, urlparse
 
 
@@ -11,13 +15,16 @@ class FakeCelestrak:
         self.bodies_by_group: dict[str, str] = {}
         self.status = 200
         self.requests: list[dict[str, list[str]]] = []
+        self.paths: list[str] = []
         fake = self
 
         class Handler(BaseHTTPRequestHandler):
             def do_GET(self) -> None:  # noqa: N802 (nom imposé par http.server)
-                query = parse_qs(urlparse(self.path).query)
+                url = urlparse(self.path)
+                query = parse_qs(url.query)
                 fake.requests.append(query)
-                [group] = query.get("GROUP", [""])
+                fake.paths.append(url.path)
+                [group] = query.get("GROUP", [PurePosixPath(url.path).stem])
                 payload = fake.bodies_by_group.get(group, fake.body).encode("utf-8")
                 self.send_response(fake.status)
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
@@ -29,7 +36,9 @@ class FakeCelestrak:
                 pass
 
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-        self.url = f"http://127.0.0.1:{self._server.server_port}/NORAD/elements/gp.php"
+        base = f"http://127.0.0.1:{self._server.server_port}"
+        self.url_template = base + "/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
+        self.relay_url_template = base + "/releases/download/catalogues/{group}.tle"
 
     def __enter__(self) -> "FakeCelestrak":
         threading.Thread(target=self._server.serve_forever, daemon=True).start()

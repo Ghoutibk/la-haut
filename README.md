@@ -4,7 +4,7 @@ Ce qui passe au-dessus de toi ce soir : les satellites visibles à l'œil nu dep
 
 ## Ce que fait Là-haut aujourd'hui
 
-Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres (l'ISS, Tiangong et Hubble) et des trains Starlink. Les éléments orbitaux viennent de deux groupes CelesTrak, téléchargés au besoin et gardés deux heures en cache chacun : « visual » pour les satellites célèbres, « last-30-days » pour les Starlink lancés dans les 30 derniers jours. Si un groupe est injoignable et sans cache, l'autre continue d'être annoncé. Après un téléchargement raté, CelesTrak n'est pas redemandé avant 15 minutes : les visites suivantes répondent tout de suite, avec le dernier catalogue connu s'il existe. Chaque échec est écrit dans les logs avec sa cause. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage. Les Starlink d'un même lancement qui défilent en file sur le même chemin le sont aussi, sous le nom « Train Starlink (N satellites) » : c'est la file de points que l'on prend pour des OVNI.
+Pour un observateur et une période, Là-haut liste les passages visibles à l'œil nu des satellites célèbres (l'ISS, Tiangong et Hubble) et des trains Starlink. Les éléments orbitaux viennent de deux groupes CelesTrak, téléchargés au besoin et gardés deux heures en cache chacun : « visual » pour les satellites célèbres, « last-30-days » pour les Starlink lancés dans les 30 derniers jours. Attention : depuis mi-2026, les objets nouvellement lancés reçoivent des numéros NORAD au-delà de 99999, que le format TLE ne sait pas écrire. CelesTrak ne publie donc plus « last-30-days » qu'en CSV, JSON ou XML (OMM), et répond 404 en TLE : les trains Starlink ne sont pas annoncés avec les vraies données tant que Là-haut ne lit pas ces formats. Si un groupe est injoignable et sans cache, l'autre continue d'être annoncé. Après un téléchargement raté, CelesTrak n'est pas redemandé avant 15 minutes : les visites suivantes répondent tout de suite, avec le dernier catalogue connu s'il existe. Chaque échec est écrit dans les logs avec sa cause. Le calcul des passages tourne hors ligne : propagation SGP4 et position du Soleil avec Skyfield, éphémérides DE421 embarquées. Les objets amarrés ensemble sont annoncés comme un seul passage. Les Starlink d'un même lancement qui défilent en file sur le même chemin le sont aussi, sous le nom « Train Starlink (N satellites) » : c'est la file de points que l'on prend pour des OVNI.
 
 À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi ce qui était là : c'est « C'était quoi, ça ? ». Il cherche d'abord parmi les satellites suivis, trains Starlink compris, puis parmi les planètes brillantes que l'on prend souvent pour un satellite ou un avion : Vénus, Jupiter, Mars et Saturne. Une planète est candidate si elle était au-dessus de l'horizon, dans un ciel assez sombre (Soleil à −6° ou moins), dans la direction indiquée ou une direction voisine ; les planètes sont classées de la plus proche à la plus éloignée de cette direction, après les satellites. Leurs positions sont calculées hors ligne avec les éphémérides DE421 embarquées : sans aucun catalogue de satellites, les planètes répondent quand même, et la réponse précise que les satellites n'ont pas pu être vérifiés.
 
@@ -25,7 +25,7 @@ pytest
 uvicorn --factory la_haut.composition:build_web_app --reload
 ```
 
-Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.tle`, à côté de `last-30-days.tle` ; la variable d'environnement `LA_HAUT_CACHE` permet de déplacer les deux.
+Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.tle`, à côté de `last-30-days.tle` ; la variable d'environnement `LA_HAUT_CACHE` permet de déplacer les deux. `LA_HAUT_CATALOG_URL` change la source des catalogues : une adresse où `{group}` est remplacé par le nom du groupe, CelesTrak par défaut.
 
 | Route | Rôle |
 |---|---|
@@ -58,6 +58,15 @@ Ensuite, chaque fusion sur `main` redéploie le site automatiquement. Ce qu'impl
 - le service s'endort après une quinzaine de minutes sans visite ; la visite suivante attend environ une minute qu'il se réveille ;
 - le disque est éphémère : après chaque réveil ou redéploiement, les catalogues CelesTrak sont téléchargés à nouveau ;
 - le processeur est modeste : l'onglet « Ce soir » peut mettre plusieurs secondes quand beaucoup de Starlink ont été lancés récemment.
+
+### Le relais des catalogues
+
+CelesTrak ne répond pas à Render. Le workflow GitHub Actions « Relais des catalogues » (`.github/workflows/catalogues.yml`) télécharge donc le groupe « visual » toutes les deux heures, comme CelesTrak le demande, vérifie qu'il contient des éléments orbitaux, et remplace `visual.tle` dans la release `catalogues` du dépôt. Sur Render, `LA_HAUT_CATALOG_URL` pointe vers `https://github.com/Ghoutibk/la-haut/releases/download/catalogues/{group}.tle`.
+
+- Le workflow se lance aussi à la main (onglet **Actions** → **Relais des catalogues** → **Run workflow**) et à chaque modification de son fichier sur `main`.
+- GitHub suspend les workflows programmés d'un dépôt public après 60 jours sans activité sur le dépôt : il faut alors le réactiver dans l'onglet **Actions**.
+- Si le relais s'arrête, le site continue avec la dernière copie publiée, qui vieillit : les heures de passage se décalent peu à peu au fil des jours.
+- Ne supprime pas la release `catalogues` : le site la lit.
 
 ## Architecture
 
@@ -103,6 +112,7 @@ src/la_haut/
 | Identification | `Identification` | La réponse à « C'était quoi, ça ? » : les candidats, du plus au moins probable |
 | Satellites vérifiés | `Identification.satellites_checked` | Faux quand le catalogue des satellites manquait : seules les planètes ont été cherchées, et la page le dit |
 | Délai avant nouvel essai | `CELESTRAK_RETRY_DELAY` | Après un téléchargement raté, le temps pendant lequel CelesTrak n'est pas redemandé |
+| Relais des catalogues | `LA_HAUT_CATALOG_URL`, release `catalogues` | Une copie des groupes CelesTrak, servie un fichier `<groupe>.tle` par groupe, là où CelesTrak ne répond pas |
 
 ## Tests
 

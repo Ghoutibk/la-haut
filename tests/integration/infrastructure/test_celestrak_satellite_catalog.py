@@ -26,7 +26,7 @@ def cache_path(tmp_path):
 
 
 def a_catalog(celestrak, cache_path):
-    return CelestrakSatelliteCatalog(cache_path, base_url=celestrak.url)
+    return CelestrakSatelliteCatalog(cache_path, url_template=celestrak.url_template)
 
 
 def test_without_a_cache_the_brightest_satellites_group_is_downloaded(celestrak, cache_path):
@@ -113,7 +113,7 @@ def test_after_a_failure_the_last_known_catalog_answers_without_asking_again(cel
 def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_path):
     celestrak.fails_with(503)
     catalog = CelestrakSatelliteCatalog(
-        cache_path, base_url=celestrak.url, retry_delay=timedelta(0)
+        cache_path, url_template=celestrak.url_template, retry_delay=timedelta(0)
     )
     with pytest.raises(CatalogUnavailableError):
         catalog.tracked_satellites()

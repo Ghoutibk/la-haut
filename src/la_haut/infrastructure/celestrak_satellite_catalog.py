@@ -12,7 +12,8 @@ from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.satellite import Satellite
 from la_haut.infrastructure.tle_file_satellite_catalog import parse_three_line_catalog
 
-CELESTRAK_GP_URL = "https://celestrak.org/NORAD/elements/gp.php"
+# {group} est remplacé par le nom du groupe CelesTrak.
+CELESTRAK_URL_TEMPLATE = "https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
 BRIGHTEST_SATELLITES_GROUP = "visual"
 DOWNLOAD_TIMEOUT_S = 30
 # CelesTrak publie toutes les deux heures et demande de ne pas recharger plus souvent.
@@ -34,13 +35,13 @@ class CelestrakSatelliteCatalog:
         self,
         cache_path: Path,
         group: str = BRIGHTEST_SATELLITES_GROUP,
-        base_url: str = CELESTRAK_GP_URL,
+        url_template: str = CELESTRAK_URL_TEMPLATE,
         max_age: timedelta = CELESTRAK_UPDATE_INTERVAL,
         retry_delay: timedelta = CELESTRAK_RETRY_DELAY,
     ) -> None:
         self._cache_path = cache_path
         self._group = group
-        self._base_url = base_url
+        self._url_template = url_template
         self._max_age = max_age
         self._retry_delay = retry_delay
         self._failed_at: float | None = None
@@ -76,8 +77,7 @@ class CelestrakSatelliteCatalog:
         self._cache_path.write_text(text, encoding="utf-8")
 
     def _download(self) -> str:
-        query = urllib.parse.urlencode({"GROUP": self._group, "FORMAT": "tle"})
         context = ssl.create_default_context(cafile=certifi.where())
-        url = f"{self._base_url}?{query}"
+        url = self._url_template.format(group=urllib.parse.quote(self._group))
         with urllib.request.urlopen(url, timeout=DOWNLOAD_TIMEOUT_S, context=context) as response:
             return response.read().decode("utf-8")
