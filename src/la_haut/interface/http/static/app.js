@@ -81,6 +81,9 @@ const TRAIN_EXPLANATION =
 const PLANET_EXPLANATION =
   "Une planète ne bouge pas en quelques minutes : elle reste au même endroit parmi les étoiles. Si ta lumière filait dans le ciel, c'était plutôt un satellite ou un avion.";
 
+const SATELLITES_UNCHECKED =
+  "Le catalogue des satellites est indisponible pour le moment : seules les planètes ont été vérifiées. Réessaie plus tard pour savoir si c'était un satellite.";
+
 function renderPass(pass) {
   const start = new Date(pass.starts_at);
   const item = element("li", "pass");
@@ -116,20 +119,31 @@ async function showTonight() {
   }
 }
 
-function renderIdentification(candidates) {
+function renderIdentification({ candidates, satellites_checked: satellitesChecked }) {
   const result = $("#identify-result");
-  if (!candidates.length) {
+  if (candidates.length) {
+    renderCandidates(result, candidates, satellitesChecked);
+  } else if (satellitesChecked) {
     result.replaceChildren(
       element("p", "eyebrow", "Rien de connu"),
       element("h2", null, "Ni satellite ni planète"),
       element("p", null, "Aucun satellite suivi ni aucune planète brillante n'était dans cette direction à ce moment. C'était peut-être un avion ou une étoile."),
     );
-    return;
+  } else {
+    result.replaceChildren(
+      element("p", "eyebrow", "Rien de connu"),
+      element("h2", null, "Pas une planète"),
+      element("p", null, "Aucune planète brillante n'était dans cette direction à ce moment."),
+    );
   }
+  if (!satellitesChecked) result.append(element("p", null, SATELLITES_UNCHECKED));
+}
+
+function renderCandidates(result, candidates, satellitesChecked) {
   const [best, ...others] = candidates;
   if (best.kind === "planet") {
     result.replaceChildren(
-      element("p", "eyebrow", "C'était très probablement"),
+      element("p", "eyebrow", satellitesChecked ? "C'était très probablement" : "C'était peut-être"),
       element("h2", null, best.name),
       element("p", null, `${best.name} brillait ${towardThe(best.direction.label)}, à ${best.elevation_deg}° au-dessus de l'horizon.`),
       element("p", null, PLANET_EXPLANATION),
@@ -202,11 +216,11 @@ function setUpIdentification() {
     submit.setAttribute("aria-busy", "true");
     error.textContent = "";
     try {
-      const { candidates } = await getJson("/api/identification", {
+      const identification = await getJson("/api/identification", {
         at: at.toISOString(),
         direction: sighting.direction,
       });
-      renderIdentification(candidates);
+      renderIdentification(identification);
     } catch (failure) {
       error.textContent = failure.message;
     } finally {
