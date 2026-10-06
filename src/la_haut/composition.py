@@ -21,7 +21,7 @@ from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
 from la_haut.infrastructure.tle_file_satellite_catalog import TleFileSatelliteCatalog
 from la_haut.interface.http.app import create_app
 
-DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.tle"
+DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.csv"
 # Les lancements des 30 derniers jours : les Starlink qui défilent encore en train.
 RECENT_LAUNCHES_GROUP = "last-30-days"
 
@@ -44,7 +44,7 @@ def build_list_visible_passes_from_celestrak(
     """
     brightest = CelestrakSatelliteCatalog(cache_path, url_template=url_template)
     recent_launches = CelestrakSatelliteCatalog(
-        cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.tle"),
+        cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.csv"),
         group=RECENT_LAUNCHES_GROUP,
         url_template=url_template,
     )

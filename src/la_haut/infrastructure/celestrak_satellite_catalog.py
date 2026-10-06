@@ -10,10 +10,11 @@ import certifi
 
 from la_haut.application.ports import CatalogUnavailableError
 from la_haut.domain.satellite import Satellite
-from la_haut.infrastructure.tle_file_satellite_catalog import parse_three_line_catalog
+from la_haut.infrastructure.omm_csv import parse_omm_csv
 
-# {group} est remplacé par le nom du groupe CelesTrak.
-CELESTRAK_URL_TEMPLATE = "https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
+# {group} est remplacé par le nom du groupe CelesTrak. Format OMM en CSV : le TLE ne sait pas
+# écrire les numéros NORAD au-delà de 99999, donnés depuis mi-2026 aux objets lancés.
+CELESTRAK_URL_TEMPLATE = "https://celestrak.org/NORAD/elements/gp.php?GROUP={group}&FORMAT=csv"
 BRIGHTEST_SATELLITES_GROUP = "visual"
 DOWNLOAD_TIMEOUT_S = 30
 # CelesTrak publie toutes les deux heures et demande de ne pas recharger plus souvent.
@@ -51,7 +52,7 @@ class CelestrakSatelliteCatalog:
             self._refresh_cache()
         if not self._cache_path.exists():
             raise CatalogUnavailableError("CelesTrak injoignable et aucun cache")
-        return parse_three_line_catalog(self._cache_path.read_text(encoding="utf-8"))
+        return parse_omm_csv(self._cache_path.read_text(encoding="utf-8"))
 
     def _failed_recently(self) -> bool:
         return (
@@ -68,7 +69,7 @@ class CelestrakSatelliteCatalog:
     def _refresh_cache(self) -> None:
         try:
             text = self._download()
-            if not parse_three_line_catalog(text):
+            if not parse_omm_csv(text):
                 raise ValueError("Catalogue vide")
         except (OSError, ValueError) as error:
             logger.warning("CelesTrak injoignable pour le groupe %s : %s", self._group, error)

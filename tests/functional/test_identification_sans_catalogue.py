@@ -17,7 +17,7 @@ def celestrak():
 def celestrak_never_reached(celestrak, tmp_path):
     celestrak.fails_with(503)
     return build_identify_sighting_from_celestrak(
-        tmp_path / "visual.tle", url_template=celestrak.url_template
+        tmp_path / "visual.csv", url_template=celestrak.url_template
     )
 
 

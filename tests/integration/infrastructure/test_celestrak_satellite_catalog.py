@@ -6,9 +6,15 @@ from datetime import timedelta
 import pytest
 
 from la_haut.application.ports import CatalogUnavailableError
-from la_haut.infrastructure.celestrak_satellite_catalog import CelestrakSatelliteCatalog
+from la_haut.infrastructure.celestrak_satellite_catalog import (
+    CELESTRAK_URL_TEMPLATE,
+    CelestrakSatelliteCatalog,
+)
 from tests.support.fake_celestrak import FakeCelestrak
 from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
+from tests.support.omm import omm_csv_from_tle
+
+ISS = (ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
 
 THREE_HOURS_S = 3 * 3600
 
@@ -16,29 +22,35 @@ THREE_HOURS_S = 3 * 3600
 @pytest.fixture
 def celestrak():
     with FakeCelestrak() as fake:
-        fake.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+        fake.publishes_as_omm(ISS)
         yield fake
 
 
 @pytest.fixture
 def cache_path(tmp_path):
-    return tmp_path / "visual.tle"
+    return tmp_path / "visual.csv"
 
 
 def a_catalog(celestrak, cache_path):
     return CelestrakSatelliteCatalog(cache_path, url_template=celestrak.url_template)
 
 
+def test_celestrak_is_asked_for_the_group_in_omm_csv_format():
+    assert CELESTRAK_URL_TEMPLATE.format(group="last-30-days") == (
+        "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=csv"
+    )
+
+
 def test_without_a_cache_the_brightest_satellites_group_is_downloaded(celestrak, cache_path):
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
     assert iss.norad_id == 25544
-    assert celestrak.requests == [{"GROUP": ["visual"], "FORMAT": ["tle"]}]
+    assert celestrak.requests == [{"GROUP": ["visual"], "FORMAT": ["csv"]}]
     assert cache_path.exists()
 
 
 def a_cache_written(cache_path, seconds_ago=0):
-    cache_path.write_text("\n".join([ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2]) + "\n", "utf-8")
+    cache_path.write_text(omm_csv_from_tle(ISS), "utf-8")
     written_at = time.time() - seconds_ago
     os.utime(cache_path, (written_at, written_at))
 
@@ -77,7 +89,7 @@ def test_a_response_that_is_not_a_catalog_never_replaces_the_cache(celestrak, ca
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
     assert iss.norad_id == 25544
-    assert ISS_TLE_LINE_1 in cache_path.read_text("utf-8")
+    assert cache_path.read_bytes() == omm_csv_from_tle(ISS).encode("utf-8")
 
 
 def test_without_cache_nor_celestrak_the_catalog_is_unavailable(celestrak, cache_path):
@@ -117,7 +129,7 @@ def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_
     )
     with pytest.raises(CatalogUnavailableError):
         catalog.tracked_satellites()
-    celestrak.publishes(ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
+    celestrak.publishes_as_omm(ISS)
 
     [iss] = catalog.tracked_satellites()
 

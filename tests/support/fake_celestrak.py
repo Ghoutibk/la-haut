@@ -1,12 +1,14 @@
 """Un faux CelesTrak sur localhost : de vraies requêtes HTTP, sans dépendre du réseau.
 
-Il joue aussi le relais des catalogues, qui sert chaque groupe dans un fichier <groupe>.tle.
+Il joue aussi le relais des catalogues, qui sert chaque groupe dans un fichier <groupe>.csv.
 """
 
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import PurePosixPath
 from urllib.parse import parse_qs, urlparse
+
+from tests.support.omm import omm_csv_from_tle
 
 
 class FakeCelestrak:
@@ -37,8 +39,8 @@ class FakeCelestrak:
 
         self._server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
         base = f"http://127.0.0.1:{self._server.server_port}"
-        self.url_template = base + "/NORAD/elements/gp.php?GROUP={group}&FORMAT=tle"
-        self.relay_url_template = base + "/releases/download/catalogues/{group}.tle"
+        self.url_template = base + "/NORAD/elements/gp.php?GROUP={group}&FORMAT=csv"
+        self.relay_url_template = base + "/releases/download/catalogues/{group}.csv"
 
     def __enter__(self) -> "FakeCelestrak":
         threading.Thread(target=self._server.serve_forever, daemon=True).start()
@@ -56,6 +58,10 @@ class FakeCelestrak:
         else:
             self.bodies_by_group[group] = body
         self.status = 200
+
+    def publishes_as_omm(self, *entries: tuple[str, str, str], group: str | None = None) -> None:
+        """Publie ces TLE (nom, ligne 1, ligne 2), convertis en catalogue OMM au format CSV."""
+        self.publishes(*omm_csv_from_tle(*entries).splitlines(), group=group)
 
     def fails_with(self, status: int) -> None:
         self.status = status
