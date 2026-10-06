@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 from datetime import timedelta
@@ -122,3 +123,15 @@ def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_
 
     assert iss.norad_id == 25544
     assert len(celestrak.requests) == 2
+
+
+def test_a_failed_download_is_logged_with_its_group_and_its_reason(celestrak, cache_path, caplog):
+    celestrak.fails_with(503)
+
+    with caplog.at_level(logging.WARNING), pytest.raises(CatalogUnavailableError):
+        a_catalog(celestrak, cache_path).tracked_satellites()
+
+    [record] = caplog.records
+    assert record.levelno == logging.WARNING
+    assert "visual" in record.getMessage()
+    assert "503" in record.getMessage()

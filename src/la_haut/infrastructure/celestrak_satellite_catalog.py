@@ -1,3 +1,4 @@
+import logging
 import ssl
 import time
 import urllib.parse
@@ -19,6 +20,8 @@ CELESTRAK_UPDATE_INTERVAL = timedelta(hours=2)
 # Après un échec, CelesTrak est laissé tranquille un moment : les visites suivantes n'attendent pas
 # un nouveau téléchargement voué à échouer.
 CELESTRAK_RETRY_DELAY = timedelta(minutes=15)
+
+logger = logging.getLogger(__name__)
 
 
 class CelestrakSatelliteCatalog:
@@ -66,7 +69,8 @@ class CelestrakSatelliteCatalog:
             text = self._download()
             if not parse_three_line_catalog(text):
                 raise ValueError("Catalogue vide")
-        except (OSError, ValueError):
+        except (OSError, ValueError) as error:
+            logger.warning("CelesTrak injoignable pour le groupe %s : %s", self._group, error)
             self._failed_at = time.monotonic()
             return  # le dernier catalogue connu, s'il existe, reste valable en attendant
         self._cache_path.write_text(text, encoding="utf-8")
