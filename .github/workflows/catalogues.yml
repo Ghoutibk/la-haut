@@ -1,0 +1,53 @@
+# Recopie les catalogues CelesTrak dans la release « catalogues » du dépôt : le site en ligne les
+# lit là, parce que CelesTrak ne répond pas à son hébergeur. CelesTrak publie toutes les deux
+# heures et demande de ne pas télécharger plus souvent.
+name: Relais des catalogues
+
+on:
+  schedule:
+    - cron: "23 */2 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/catalogues.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: catalogues
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Télécharger les catalogues CelesTrak
+        # Pas de « last-30-days » : les objets lancés depuis mi-2026 ont des numéros NORAD au-delà
+        # de 99999, que le format TLE ne sait pas écrire, et CelesTrak répond 404 pour ce groupe.
+        run: |
+          for group in visual; do
+            curl --fail --silent --show-error --max-time 60 \
+              --user-agent "la-haut (+https://github.com/${GH_REPO})" \
+              --output "${group}.tle" \
+              "https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=tle"
+            # Sans données, CelesTrak peut répondre par une phrase : on exige des éléments orbitaux.
+            if ! grep -q '^1 ' "${group}.tle" || ! grep -q '^2 ' "${group}.tle"; then
+              echo "::error::Le groupe ${group} ne contient aucun élément orbital"
+              head -c 300 "${group}.tle"
+              exit 1
+            fi
+            echo "${group} : $(grep -c '^1 ' "${group}.tle") satellites"
+          done
+
+      - name: Publier dans la release « catalogues »
+        run: |
+          if ! gh release view catalogues > /dev/null 2>&1; then
+            gh release create catalogues --latest=false --title "Catalogues CelesTrak" \
+              --notes "Copie du groupe CelesTrak visual, remplacée toutes les deux heures par le workflow « Relais des catalogues ». Le site en ligne la lit : ne pas la supprimer."
+          fi
+          gh release upload catalogues visual.tle --clobber
