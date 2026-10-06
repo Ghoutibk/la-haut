@@ -13,3 +13,6 @@ services:
     envVars:
       - key: LA_HAUT_CACHE
         value: /tmp/la-haut/visual.tle
+      # CelesTrak ne répond pas à Render : les catalogues viennent du relais GitHub du dépôt.
+      - key: LA_HAUT_CATALOG_URL
+        value: https://github.com/Ghoutibk/la-haut/releases/download/catalogues/{group}.tle
