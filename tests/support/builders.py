@@ -5,12 +5,14 @@ from datetime import UTC, datetime, timedelta
 
 from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
+from la_haut.domain.orbit_mean_elements import OrbitMeanElements
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite, TwoLineElements
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
 from la_haut.domain.visible_pass import VisiblePass
 from tests.support.fixtures import (
+    ISS_2026_OMM,
     ISS_NAME,
     ISS_TLE_LINE_1,
     ISS_TLE_LINE_2,
@@ -63,6 +65,11 @@ def a_satellite(
     name: str = ISS_NAME, lines: tuple[str, str] = (ISS_TLE_LINE_1, ISS_TLE_LINE_2)
 ) -> Satellite:
     return Satellite(name=name, elements=TwoLineElements(*lines))
+
+
+def some_orbit_mean_elements(**overrides: str) -> OrbitMeanElements:
+    """Les éléments OMM réels de l'ISS du 6 octobre 2026, modifiés champ par champ."""
+    return OrbitMeanElements.from_fields({**ISS_2026_OMM, **overrides})
 
 
 def an_observer_in_paris() -> Observer:
