@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     # Les catalogues CelesTrak se gardent dans /tmp : le disque de l'offre gratuite est éphémère.
-    LA_HAUT_CACHE=/tmp/la-haut/visual.tle \
+    LA_HAUT_CACHE=/tmp/la-haut/visual.csv \
     # L'hébergeur fournit le port dans $PORT ; 8000 en local.
     PORT=8000
 
