@@ -172,6 +172,13 @@ def test_the_web_page_is_served_at_the_root():
     assert "Là-haut" in response.text
 
 
-@pytest.mark.parametrize("asset", ["/static/app.js", "/static/style.css"])
+@pytest.mark.parametrize("asset", ["/static/app.js", "/static/compass.js", "/static/style.css"])
 def test_the_page_assets_are_served(asset):
     assert a_client({}).get(asset).status_code == 200
+
+
+@pytest.mark.parametrize("module", ["/static/app.js", "/static/compass.js"])
+def test_the_page_scripts_are_served_as_javascript_modules_require(module):
+    content_type = a_client({}).get(module).headers["content-type"]
+
+    assert content_type.startswith("text/javascript")

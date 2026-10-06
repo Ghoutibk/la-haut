@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
-  <script src="/static/app.js" defer></script>
+  <script type="module" src="/static/app.js"></script>
 </head>
 <body>
   <div class="app">
@@ -53,6 +53,16 @@
 
           <fieldset>
             <legend>Dans quelle direction ?</legend>
+            <button type="button" class="aim" id="aim-start" hidden>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
+              Viser avec mon téléphone
+            </button>
+            <div class="aiming" id="aiming" hidden>
+              <p class="aim-hint">Tiens ton téléphone à plat devant toi et tourne-toi : le haut de l'écran doit pointer vers l'endroit où tu as vu la lumière.</p>
+              <p class="aim-reading" id="aim-reading" role="status">Lecture de la boussole…</p>
+              <button type="button" class="choice aim-done" id="aim-done">C'est là</button>
+            </div>
+            <p class="aim-or" id="aim-or" hidden>Ou choisis la direction toi-même :</p>
             <div class="compass">
               <button type="button" class="choice" data-direction="NW" aria-pressed="false" aria-label="Nord-ouest">NO</button>
               <button type="button" class="choice" data-direction="N" aria-pressed="false" aria-label="Nord">N</button>
@@ -64,6 +74,7 @@
               <button type="button" class="choice" data-direction="S" aria-pressed="false" aria-label="Sud">S</button>
               <button type="button" class="choice" data-direction="SE" aria-pressed="false" aria-label="Sud-est">SE</button>
             </div>
+            <p class="hint">Repère : le Soleil se lève vers l'est et se couche vers l'ouest.</p>
           </fieldset>
 
           <p class="error" id="identify-error" role="alert"></p>

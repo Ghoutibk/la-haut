@@ -1,4 +1,4 @@
-"use strict";
+import { FRENCH_NAMES, compassPointOf, headingFrom } from "./compass.js";
 
 const PARIS = { latitude: 48.8566, longitude: 2.3522, label: "Paris" };
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
@@ -70,6 +70,7 @@ function route(pass) {
 const startsWithVowel = (word) => /^[aeiouy]/i.test(word);
 const fromThe = (direction) => (startsWithVowel(direction) ? `de l'${direction}` : `du ${direction}`);
 const towardThe = (direction) => (startsWithVowel(direction) ? `vers l'${direction}` : `vers le ${direction}`);
+const theDirection = (direction) => (startsWithVowel(direction) ? `l'${direction}` : `le ${direction}`);
 
 function isToday(date) {
   return date.toDateString() === new Date().toDateString();
@@ -185,6 +186,64 @@ function sightingTime() {
   return new Date();
 }
 
+// ---------- Viser avec le téléphone ----------
+
+const COMPASS_PATIENCE_MS = 3000;
+
+// Le téléphone tenu à plat choisit la direction tout seul, en direct, jusqu'à « C'est là ».
+// Rend la fonction qui arrête la visée.
+function setUpAiming(chooseDirection) {
+  const start = $("#aim-start");
+  const panel = $("#aiming");
+  const reading = $("#aim-reading");
+  const error = $("#identify-error");
+  const hasCompass = "DeviceOrientationEvent" in window && matchMedia("(pointer: coarse)").matches;
+  if (!hasCompass) return () => {};
+
+  start.hidden = false;
+  $("#aim-or").hidden = false;
+  const eventName = "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
+  let patience;
+
+  function onOrientation(event) {
+    const heading = headingFrom(event);
+    if (heading === null) return;
+    clearTimeout(patience);
+    const point = compassPointOf(heading);
+    chooseDirection(point);
+    reading.textContent = `Tu vises ${theDirection(FRENCH_NAMES[point])}`;
+  }
+
+  function stop() {
+    window.removeEventListener(eventName, onOrientation);
+    clearTimeout(patience);
+    panel.hidden = true;
+    start.hidden = false;
+  }
+
+  start.addEventListener("click", async () => {
+    error.textContent = "";
+    // L'iPhone demande l'accord de la personne avant de donner la boussole.
+    if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      const answer = await DeviceOrientationEvent.requestPermission().catch(() => "denied");
+      if (answer !== "granted") {
+        error.textContent = "Sans accès à la boussole, choisis la direction toi-même.";
+        return;
+      }
+    }
+    start.hidden = true;
+    panel.hidden = false;
+    reading.textContent = "Lecture de la boussole…";
+    window.addEventListener(eventName, onOrientation);
+    patience = setTimeout(() => {
+      stop();
+      error.textContent = "La boussole de ton téléphone ne répond pas : choisis la direction toi-même.";
+    }, COMPASS_PATIENCE_MS);
+  });
+  $("#aim-done").addEventListener("click", stop);
+  return stop;
+}
+
 function setUpIdentification() {
   const whenButtons = [...document.querySelectorAll("[data-when]")];
   const directionButtons = [...document.querySelectorAll("[data-direction]")];
@@ -197,16 +256,23 @@ function setUpIdentification() {
     }),
   );
 
+  const chooseDirection = (point) => {
+    sighting.direction = point;
+    press(directionButtons, directionButtons.find((button) => button.dataset.direction === point));
+    $("#identify-error").textContent = "";
+  };
+  const stopAiming = setUpAiming(chooseDirection);
+
   directionButtons.forEach((button) =>
     button.addEventListener("click", () => {
-      sighting.direction = button.dataset.direction;
-      press(directionButtons, button);
-      $("#identify-error").textContent = "";
+      stopAiming();
+      chooseDirection(button.dataset.direction);
     }),
   );
 
   $("#identify-form").addEventListener("submit", async (event) => {
     event.preventDefault();
+    stopAiming();
     const error = $("#identify-error");
     const at = sightingTime();
     if (!sighting.direction) return void (error.textContent = "Choisis la direction où tu l'as vue.");
