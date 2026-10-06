@@ -1,3 +1,4 @@
+import itertools
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -21,6 +22,12 @@ REFERENCE_PASS_END = datetime(2018, 7, 4, 2, 57, 55, tzinfo=UTC)
 REFERENCE_PASS_MAX_ELEVATION_DEG = 14.4
 ELEVATION_TOLERANCE_DEG = 0.5
 
+# Avec find_events de Skyfield (horizon à 0°) : après l'époque du TLE, l'ISS ne se lève sur Paris
+# qu'à 02:51:26 et se couche à 03:00:40. Le Soleil y est à -7,69° à 02:56:00 UTC (Skyfield).
+REFERENCE_RISE = datetime(2018, 7, 4, 2, 51, 26, tzinfo=UTC)
+REFERENCE_SET = datetime(2018, 7, 4, 3, 0, 40, tzinfo=UTC)
+REFERENCE_SUN_ELEVATION_AT_0256_DEG = -7.69
+
 # Culmination de l'ISS sur Paris trouvée par EarthSatellite.find_events de Skyfield à partir du
 # TLE du 6 octobre 2026 : le même jeu d'éléments que l'OMM, par un autre chemin de calcul.
 REFERENCE_2026_CULMINATION = datetime(2026, 10, 6, 13, 10, 5, tzinfo=UTC)
@@ -32,21 +39,38 @@ def tracker():
     return SkyfieldSkyTracker(step=STEP)
 
 
-def test_samples_cover_the_window_at_the_tracker_step(tracker):
-    window = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(minutes=1))
+def test_no_sample_is_computed_while_the_satellite_stays_below_the_horizon(tracker):
+    an_hour_after_epoch = TimeWindow(
+        starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(hours=1)
+    )
 
-    samples = tracker.track(a_satellite(), an_observer_in_paris(), window)
-
-    assert [sample.at for sample in samples] == [ISS_TLE_EPOCH + n * STEP for n in range(6)]
+    assert tracker.track(a_satellite(), an_observer_in_paris(), an_hour_after_epoch) == []
 
 
-def test_the_sun_stands_about_64_degrees_over_paris_at_noon_in_early_july(tracker):
-    noon = datetime(2018, 7, 3, 12, 0, tzinfo=UTC)
-    window = TimeWindow(starts_at=noon, ends_at=noon + STEP)
+def test_a_pass_is_sampled_at_the_tracker_step_from_below_the_horizon_to_below_it(tracker):
+    the_night = TimeWindow(starts_at=ISS_TLE_EPOCH, ends_at=ISS_TLE_EPOCH + timedelta(hours=8))
 
-    [sample] = tracker.track(a_satellite(), an_observer_in_paris(), window)
+    track = tracker.track(a_satellite(), an_observer_in_paris(), the_night)
 
-    assert sample.sun_elevation_deg == pytest.approx(64.06, abs=0.1)
+    instants = [sample.at for sample in track]
+    assert all(later - earlier == STEP for earlier, later in itertools.pairwise(instants))
+    assert track[0].elevation_deg < 0 and track[-1].elevation_deg < 0
+    above = [sample for sample in track if sample.elevation_deg > 0]
+    assert abs(above[0].at - REFERENCE_RISE) <= STEP
+    assert abs(above[-1].at - REFERENCE_SET) <= STEP
+
+
+def test_each_sample_tells_how_high_the_sun_stands_over_the_observer(tracker):
+    at_0256 = datetime(2018, 7, 4, 2, 56, tzinfo=UTC)
+    during_the_pass = TimeWindow(
+        starts_at=datetime(2018, 7, 4, 2, 50, tzinfo=UTC),
+        ends_at=datetime(2018, 7, 4, 3, 5, tzinfo=UTC),
+    )
+
+    track = tracker.track(a_satellite(), an_observer_in_paris(), during_the_pass)
+
+    [sample] = [sample for sample in track if sample.at == at_0256]
+    assert sample.sun_elevation_deg == pytest.approx(REFERENCE_SUN_ELEVATION_AT_0256_DEG, abs=0.01)
 
 
 def test_tracking_then_detection_finds_the_one_visible_iss_pass_of_that_night(tracker):
