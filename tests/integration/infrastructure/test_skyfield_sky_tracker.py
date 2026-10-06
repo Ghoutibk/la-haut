@@ -3,12 +3,14 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.orbit_mean_elements import OrbitMeanElements
 from la_haut.domain.pass_detection import detect_visible_passes
+from la_haut.domain.satellite import Satellite
 from la_haut.domain.time_window import TimeWindow
 from la_haut.domain.visibility import NakedEyeVisibility
 from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
 from tests.support.builders import a_satellite, an_observer_in_paris
-from tests.support.fixtures import ISS_TLE_EPOCH
+from tests.support.fixtures import ISS_2026_OMM, ISS_NAME, ISS_TLE_EPOCH
 
 STEP = timedelta(seconds=10)
 
@@ -18,6 +20,11 @@ REFERENCE_PASS_START = datetime(2018, 7, 4, 2, 54, 10, tzinfo=UTC)
 REFERENCE_PASS_END = datetime(2018, 7, 4, 2, 57, 55, tzinfo=UTC)
 REFERENCE_PASS_MAX_ELEVATION_DEG = 14.4
 ELEVATION_TOLERANCE_DEG = 0.5
+
+# Culmination de l'ISS sur Paris trouvée par EarthSatellite.find_events de Skyfield à partir du
+# TLE du 6 octobre 2026 : le même jeu d'éléments que l'OMM, par un autre chemin de calcul.
+REFERENCE_2026_CULMINATION = datetime(2026, 10, 6, 13, 10, 5, tzinfo=UTC)
+REFERENCE_2026_CULMINATION_ELEVATION_DEG = 63.8
 
 
 @pytest.fixture(scope="module")
@@ -56,4 +63,21 @@ def test_tracking_then_detection_finds_the_one_visible_iss_pass_of_that_night(tr
     assert (visible_pass.appears_in, visible_pass.vanishes_in) == (
         CompassPoint.SOUTH,
         CompassPoint.EAST,
+    )
+
+
+def test_a_satellite_known_by_its_omm_is_tracked_where_its_tle_puts_it(tracker):
+    iss = Satellite(name=ISS_NAME, elements=OrbitMeanElements.from_fields(ISS_2026_OMM))
+    five_minutes = timedelta(minutes=5)
+    around_the_culmination = TimeWindow(
+        starts_at=REFERENCE_2026_CULMINATION - five_minutes,
+        ends_at=REFERENCE_2026_CULMINATION + five_minutes,
+    )
+
+    track = tracker.track(iss, an_observer_in_paris(), around_the_culmination)
+
+    highest = max(track, key=lambda sample: sample.elevation_deg)
+    assert abs(highest.at - REFERENCE_2026_CULMINATION) <= STEP
+    assert highest.elevation_deg == pytest.approx(
+        REFERENCE_2026_CULMINATION_ELEVATION_DEG, abs=ELEVATION_TOLERANCE_DEG
     )

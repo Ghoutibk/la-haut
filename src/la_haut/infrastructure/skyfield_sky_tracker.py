@@ -6,6 +6,7 @@ from skyfield.api import EarthSatellite, wgs84
 
 from la_haut.domain.compass_point import FULL_TURN_DEG
 from la_haut.domain.observer import Observer
+from la_haut.domain.orbit_mean_elements import OrbitMeanElements
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
@@ -40,13 +41,19 @@ class SkyfieldSkyTracker:
         sun_elevations, _, _ = (self._earth + place).at(times).observe(self._sun).apparent().altaz()
         return instants, times, place, sun_elevations
 
+    def _orbiter(self, satellite: Satellite) -> EarthSatellite:
+        elements = satellite.elements
+        if isinstance(elements, OrbitMeanElements):
+            orbiter = EarthSatellite.from_omm(self._timescale, elements.as_fields())
+            orbiter.name = satellite.name
+            return orbiter
+        return EarthSatellite(elements.line_1, elements.line_2, satellite.name, self._timescale)
+
     def track(
         self, satellite: Satellite, observer: Observer, window: TimeWindow
     ) -> list[SkySample]:
         instants, times, place, sun_elevations = self._sky_clock(observer, window)
-        orbiter = EarthSatellite(
-            satellite.elements.line_1, satellite.elements.line_2, satellite.name, self._timescale
-        )
+        orbiter = self._orbiter(satellite)
 
         elevations, azimuths, _ = (orbiter - place).at(times).altaz()
         sunlit = orbiter.at(times).is_sunlit(self._ephemeris)
