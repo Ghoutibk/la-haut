@@ -1,16 +1,15 @@
 """Ports : ce dont l'application a besoin, sans dire comment c'est fait."""
 
-from collections.abc import Sequence
 from datetime import datetime
 from typing import Protocol
 
+from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
-from la_haut.domain.visible_pass import VisiblePass
 
 
 class CatalogUnavailableError(RuntimeError):
@@ -40,6 +39,4 @@ class PlanetLocator(Protocol):
 class SightingIdentification(Protocol):
     """Ce que l'interface attend de « c'était quoi, ça ? », planètes comprises ou non."""
 
-    def execute(
-        self, observer: Observer, sighting: Sighting
-    ) -> Sequence[VisiblePass | PlanetPosition]: ...
+    def execute(self, observer: Observer, sighting: Sighting) -> Identification: ...

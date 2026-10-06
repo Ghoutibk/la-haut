@@ -58,7 +58,7 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
         identify_sighting = build_identify_sighting_from_celestrak(
             tmp_path / "visual.tle", base_url=celestrak.url
         )
-        best, *_ = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest)
+        best, *_ = identify_sighting.execute(an_observer_in_paris(), seen_at_its_highest).candidates
 
     assert best.satellite_name == ISS_NAME
 
@@ -99,6 +99,6 @@ def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
         identify_sighting = build_identify_sighting_from_celestrak(
             tmp_path / "visual.tle", base_url=celestrak.url
         )
-        [candidate] = identify_sighting.execute(an_observer_in_paris(), venus_at_dusk)
+        [candidate] = identify_sighting.execute(an_observer_in_paris(), venus_at_dusk).candidates
 
     assert candidate.planet == Planet.VENUS

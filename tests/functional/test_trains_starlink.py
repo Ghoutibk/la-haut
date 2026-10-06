@@ -36,5 +36,6 @@ def one_train_pass(passes, size, day, start, end):
 
 
 @then(parsers.parse("la lumière était un train Starlink de {size:d} satellites"))
-def it_was_a_train(candidates, size):
-    assert (candidates[0].is_starlink_train, candidates[0].train_size) == (True, size)
+def it_was_a_train(identification, size):
+    best = identification.candidates[0]
+    assert (best.is_starlink_train, best.train_size) == (True, size)

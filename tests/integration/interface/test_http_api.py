@@ -109,7 +109,7 @@ def test_a_sighting_matching_no_satellite_gives_no_candidate():
         "/api/identification", params=seen
     )
 
-    assert response.json() == {"candidates": []}
+    assert response.json() == {"candidates": [], "satellites_checked": True}
 
 
 @pytest.mark.parametrize(
@@ -126,11 +126,14 @@ def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
     assert response.status_code == 422
 
 
-def a_client_without_catalog():
+def a_client_without_catalog(planets=()):
     list_visible_passes = ListVisiblePasses(
         catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
     )
-    return TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
+    identify_sighting = IdentifySightingWithPlanets(
+        IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
+    )
+    return TestClient(create_app(list_visible_passes, identify_sighting))
 
 
 def test_the_api_says_so_when_no_catalog_is_available():
@@ -138,6 +141,20 @@ def test_the_api_says_so_when_no_catalog_is_available():
 
     assert response.status_code == 503
     assert "catalogue" in response.json()["detail"]
+
+
+def test_without_catalog_the_planets_answer_and_the_api_says_the_satellites_were_not_checked():
+    seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
+    venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=270.0)
+
+    response = a_client_without_catalog(planets=[venus]).get("/api/identification", params=seen)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert ([c["name"] for c in body["candidates"]], body["satellites_checked"]) == (
+        ["Vénus"],
+        False,
+    )
 
 
 def test_the_health_check_answers_without_computing_anything():
