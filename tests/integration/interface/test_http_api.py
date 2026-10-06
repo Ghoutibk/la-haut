@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.send_feedback import SendFeedback
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet
 from la_haut.domain.time_window import TimeWindow
@@ -18,9 +19,11 @@ from tests.support.builders import (
     a_track,
 )
 from tests.support.fakes import (
+    FakeFeedbackInbox,
     FakePlanetLocator,
     FakeSatelliteCatalog,
     FakeSkyTracker,
+    UnavailableFeedbackInbox,
     UnavailableSatelliteCatalog,
 )
 
@@ -182,3 +185,87 @@ def test_the_page_scripts_are_served_as_javascript_modules_require(module):
     content_type = a_client({}).get(module).headers["content-type"]
 
     assert content_type.startswith("text/javascript")
+
+
+A_PROBLEM = {
+    "kind": "problem",
+    "message": "La boussole ne bouge pas",
+    "contact": "claire@example.org",
+}
+
+
+def a_feedback_client(inbox, max_per_hour=20):
+    list_visible_passes = ListVisiblePasses(
+        catalog=FakeSatelliteCatalog([]), tracker=FakeSkyTracker({})
+    )
+    identify_sighting = IdentifySightingWithPlanets(
+        IdentifySighting(list_visible_passes), FakePlanetLocator([])
+    )
+    send_feedback = SendFeedback(inbox, max_per_hour=max_per_hour)
+    return TestClient(
+        create_app(list_visible_passes, identify_sighting, send_feedback=send_feedback)
+    )
+
+
+def test_a_feedback_is_sent_over_http():
+    inbox = FakeFeedbackInbox()
+
+    response = a_feedback_client(inbox).post("/api/feedback", json=A_PROBLEM)
+
+    assert (response.status_code, response.json()) == (201, {"status": "sent"})
+    [(feedback, _)] = inbox.delivered
+    assert (feedback.kind, feedback.message, feedback.contact) == (
+        "problem",
+        "La boussole ne bouge pas",
+        "claire@example.org",
+    )
+
+
+def test_an_empty_feedback_is_refused_with_a_reason_the_page_can_show():
+    response = a_feedback_client(FakeFeedbackInbox()).post(
+        "/api/feedback", json={**A_PROBLEM, "message": "  "}
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Écris ton message avant de l'envoyer."}
+
+
+def test_an_unknown_kind_of_feedback_is_refused():
+    response = a_feedback_client(FakeFeedbackInbox()).post(
+        "/api/feedback", json={**A_PROBLEM, "kind": "spam"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_a_robot_filling_the_hidden_field_is_told_it_worked_but_nothing_is_sent():
+    inbox = FakeFeedbackInbox()
+
+    response = a_feedback_client(inbox).post(
+        "/api/feedback", json={**A_PROBLEM, "website": "https://spam.example"}
+    )
+
+    assert response.status_code == 201
+    assert inbox.delivered == []
+
+
+def test_the_api_says_so_when_the_feedback_inbox_is_unavailable():
+    response = a_feedback_client(UnavailableFeedbackInbox()).post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 503
+    assert "avis" in response.json()["detail"]
+
+
+def test_the_api_asks_to_wait_when_too_much_feedback_came_in_the_hour():
+    client = a_feedback_client(FakeFeedbackInbox(), max_per_hour=1)
+    client.post("/api/feedback", json=A_PROBLEM)
+
+    response = client.post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 429
+
+
+def test_without_feedback_inbox_the_api_says_feedback_is_unavailable():
+    response = a_client({}).post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 503

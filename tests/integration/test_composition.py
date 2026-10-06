@@ -13,6 +13,7 @@ from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
 from tests.support.builders import an_observer_in_paris
 from tests.support.fake_celestrak import FakeCelestrak
+from tests.support.fake_github import FakeGitHub
 from tests.support.fixtures import (
     DOCKED_VEHICLE_NAME,
     DOCKED_VEHICLE_TLE_LINE_1,
@@ -120,3 +121,37 @@ def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment
         "/releases/download/catalogues/last-30-days.csv",
         "/releases/download/catalogues/visual.csv",
     ]
+
+
+A_PROBLEM = {"kind": "problem", "message": "La boussole ne bouge pas"}
+
+
+def test_the_web_app_sends_feedback_to_the_repository_named_in_its_environment(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setenv("LA_HAUT_FEEDBACK_REPO", "Ghoutibk/la-haut-avis")
+    monkeypatch.setenv("LA_HAUT_FEEDBACK_TOKEN", "jeton-de-test")
+
+    with FakeCelestrak() as celestrak, FakeGitHub() as github:
+        app = build_web_app(
+            tmp_path / "visual.csv",
+            url_template=celestrak.url_template,
+            feedback_api_url=github.url,
+        )
+        response = TestClient(app).post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 201
+    [request] = github.requests
+    assert request["path"] == "/repos/Ghoutibk/la-haut-avis/issues"
+    assert request["headers"]["Authorization"] == "Bearer jeton-de-test"
+
+
+def test_without_repository_nor_token_the_web_app_sends_no_feedback(tmp_path, monkeypatch):
+    monkeypatch.delenv("LA_HAUT_FEEDBACK_REPO", raising=False)
+    monkeypatch.delenv("LA_HAUT_FEEDBACK_TOKEN", raising=False)
+
+    with FakeCelestrak() as celestrak:
+        app = build_web_app(tmp_path / "visual.csv", url_template=celestrak.url_template)
+        response = TestClient(app).post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 503
