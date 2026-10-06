@@ -1,5 +1,5 @@
 from la_haut.application.identify_sighting import IdentifySighting
-from la_haut.application.ports import PlanetLocator
+from la_haut.application.ports import CatalogUnavailableError, PlanetLocator
 from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet
@@ -11,6 +11,7 @@ class IdentifySightingWithPlanets:
 
     Un satellite qui collait au signalement l'emporte : une lumière qui bouge n'est pas une
     planète. Les planètes viennent ensuite, de la plus proche à la plus éloignée de la direction.
+    Sans catalogue de satellites, les planètes répondent quand même, et l'identification le dit.
     """
 
     def __init__(self, identify_sighting: IdentifySighting, planets: PlanetLocator) -> None:
@@ -28,6 +29,8 @@ class IdentifySightingWithPlanets:
             (position for position, angle in angles.items() if angle is not None),
             key=lambda position: angles[position],
         )
-        return Identification(
-            candidates=(*self._identify_sighting.execute(observer, sighting), *planets)
-        )
+        try:
+            satellites = self._identify_sighting.execute(observer, sighting)
+        except CatalogUnavailableError:
+            return Identification(candidates=tuple(planets), satellites_checked=False)
+        return Identification(candidates=(*satellites, *planets))

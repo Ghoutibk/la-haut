@@ -9,3 +9,5 @@ class Identification:
     """La réponse à « c'était quoi, ça ? » : les candidats, du plus au moins probable."""
 
     candidates: tuple[VisiblePass | PlanetPosition, ...]
+    # Faux quand le catalogue des satellites manquait : seules les planètes ont été cherchées.
+    satellites_checked: bool = True
