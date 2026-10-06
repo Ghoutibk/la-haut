@@ -46,7 +46,7 @@ def search_visible_passes(observer, catalog_path, start, end):
 
 @when(
     parsers.parse("j'ai vu une lumière le {day} à {clock}, direction {direction}"),
-    target_fixture="candidates",
+    target_fixture="identification",
 )
 def report_a_sighting(observer, catalog_path, day, clock, direction):
     sighting = Sighting(

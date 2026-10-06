@@ -33,17 +33,17 @@ def identify(planets, tracks_by_name=None, locator=None):
 def test_a_planet_in_that_direction_is_identified_when_no_satellite_was_there():
     venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=275.0)
 
-    assert identify([venus]) == [venus]
+    assert identify([venus]).candidates == (venus,)
 
 
 def test_a_planet_elsewhere_is_not_identified():
-    assert identify([a_planet_position(planet=Planet.MARS, azimuth_deg=90.0)]) == []
+    assert identify([a_planet_position(planet=Planet.MARS, azimuth_deg=90.0)]).candidates == ()
 
 
 def test_satellites_come_before_planets():
     venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=270.0)
 
-    candidates = identify([venus], {"ISS (ZARYA)": a_track(WEST, WEST, WEST)})
+    candidates = identify([venus], {"ISS (ZARYA)": a_track(WEST, WEST, WEST)}).candidates
 
     assert [getattr(c, "satellite_name", None) for c in candidates] == ["ISS (ZARYA)", None]
     assert candidates[1] == venus
@@ -54,7 +54,7 @@ def test_planets_come_from_the_closest_to_the_furthest_from_the_given_direction(
     jupiter = a_planet_position(planet=Planet.JUPITER, azimuth_deg=300.0)
     venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=245.0)
 
-    assert identify([venus, jupiter, saturn]) == [saturn, venus, jupiter]
+    assert identify([venus, jupiter, saturn]).candidates == (saturn, venus, jupiter)
 
 
 def test_every_planet_is_located_for_the_observer_at_the_moment_of_the_sighting():

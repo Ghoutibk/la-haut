@@ -74,11 +74,9 @@ def create_app(
     ) -> dict:
         observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
         sighting = Sighting(at=at, direction=direction)
+        identification = identify_sighting.execute(observer, sighting)
         return {
-            "candidates": [
-                present_candidate(candidate)
-                for candidate in identify_sighting.execute(observer, sighting)
-            ]
+            "candidates": [present_candidate(candidate) for candidate in identification.candidates]
         }
 
     return app

@@ -1,9 +1,9 @@
 from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.ports import PlanetLocator
+from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
-from la_haut.domain.planet import Planet, PlanetPosition
+from la_haut.domain.planet import Planet
 from la_haut.domain.sighting import Sighting
-from la_haut.domain.visible_pass import VisiblePass
 
 
 class IdentifySightingWithPlanets:
@@ -17,7 +17,7 @@ class IdentifySightingWithPlanets:
         self._identify_sighting = identify_sighting
         self._planets = planets
 
-    def execute(self, observer: Observer, sighting: Sighting) -> list[VisiblePass | PlanetPosition]:
+    def execute(self, observer: Observer, sighting: Sighting) -> Identification:
         angles = {
             position: position.angle_to(sighting)
             for position in (
@@ -28,4 +28,6 @@ class IdentifySightingWithPlanets:
             (position for position, angle in angles.items() if angle is not None),
             key=lambda position: angles[position],
         )
-        return [*self._identify_sighting.execute(observer, sighting), *planets]
+        return Identification(
+            candidates=(*self._identify_sighting.execute(observer, sighting), *planets)
+        )

@@ -130,7 +130,10 @@ def a_client_without_catalog():
     list_visible_passes = ListVisiblePasses(
         catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
     )
-    return TestClient(create_app(list_visible_passes, IdentifySighting(list_visible_passes)))
+    identify_sighting = IdentifySightingWithPlanets(
+        IdentifySighting(list_visible_passes), FakePlanetLocator([])
+    )
+    return TestClient(create_app(list_visible_passes, identify_sighting))
 
 
 def test_the_api_says_so_when_no_catalog_is_available():
