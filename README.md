@@ -8,7 +8,7 @@ Pour un observateur et une période, Là-haut liste les passages visibles à l'�
 
 À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi ce qui était là : c'est « C'était quoi, ça ? ». Il cherche d'abord parmi les satellites suivis, trains Starlink compris, puis parmi les planètes brillantes que l'on prend souvent pour un satellite ou un avion : Vénus, Jupiter, Mars et Saturne. Une planète est candidate si elle était au-dessus de l'horizon, dans un ciel assez sombre (Soleil à −6° ou moins), dans la direction indiquée ou une direction voisine ; les planètes sont classées de la plus proche à la plus éloignée de cette direction, après les satellites. Leurs positions sont calculées hors ligne avec les éphémérides DE421 embarquées : sans aucun catalogue de satellites, les planètes répondent quand même, et la réponse précise que les satellites n'ont pas pu être vérifiés.
 
-Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir » et « C'était quoi ? », appuyée sur une API HTTP.
+Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir » et « C'était quoi ? », appuyée sur une API HTTP. Pour dire où la lumière était, inutile de connaître les points cardinaux : sur un téléphone, « Viser avec mon téléphone » lit la boussole. On tient le téléphone à plat, le haut de l'écran vers l'endroit où on a vu la lumière, et la direction se choisit en direct jusqu'à « C'est là ». L'iPhone demande d'abord l'autorisation. Sans boussole, ou sur un ordinateur, on choisit parmi huit boutons, avec un repère : le Soleil se lève vers l'est et se couche vers l'ouest.
 
 ## Démarrer
 
@@ -92,6 +92,7 @@ src/la_haut/
 | Éléments orbitaux moyens | `OrbitMeanElements` | L'orbite au format OMM du CCSDS, telle que CelesTrak la publie, champ par champ vérifié ; accepte les numéros NORAD au-delà de 99999 |
 | Échantillon de ciel | `SkySample` | Où se trouve le satellite à un instant, éclairé ou non |
 | Point cardinal | `CompassPoint` | Une des huit directions de la rose des vents |
+| Visée | `compass.js` : `headingFrom`, `compassPointOf` | Le cap vers lequel pointe le haut du téléphone tenu à plat, rangé dans les mêmes huit secteurs que `CompassPoint` |
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
 | Satellite célèbre | `is_famous`, `FamousSatelliteCatalog` | ISS, Tiangong ou Hubble, reconnus à leur numéro NORAD : les seuls annoncés pour l'instant |
@@ -124,6 +125,7 @@ src/la_haut/
 | Unitaires | 80 % | `tests/unit` | Domaine et cas d'usage, avec des doublures des ports |
 | Intégration | 13 % | `tests/integration` | Adaptateurs branchés sur Skyfield et sur de vrais fichiers |
 | Fonctionnels | 7 % | `tests/functional` | Scénarios Gherkin en français, de bout en bout |
+| Page web | hors pyramide | `tests/js` | La logique de la page sans le navigateur, avec le lanceur de tests de Node : `node --test 'tests/js/**/*.test.js'` |
 
 La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référence astronomiques viennent de calculs Skyfield indépendants de nos adaptateurs, sur un vrai TLE de l'ISS et sur les vrais catalogues CelesTrak du 6 octobre 2026 (`tests/support/celestrak`). Les builders et doublures partagés sont dans `tests/support`.
 

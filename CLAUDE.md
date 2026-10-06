@@ -15,10 +15,12 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pre-commit install
 python -m pytest
+node --test 'tests/js/**/*.test.js'
 ```
 
 - Active toujours `.venv` avant de committer : les hooks pre-commit lancent `ruff` et `pytest` depuis le PATH.
 - Le hook `commit-msg` refuse tout message qui ne suit pas Conventional Commits.
+- La logique de la page (JavaScript sans framework) se teste avec le lanceur intégré de Node, dans `tests/js` : garde-la dans des modules purs, sans le DOM. Le hook pre-commit lance ces tests dès qu'un fichier `.js` change.
 - Les tests ne touchent jamais le réseau. CelesTrak est simulé par `tests/support/fake_celestrak.py` ; les éphémérides DE421 sont embarquées (paquet `skyfield-data`).
 
 ## Règles d'ingénierie
