@@ -1,8 +1,13 @@
 import pytest
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.identification import Identification
 from la_haut.domain.planet import Planet
-from la_haut.interface.http.presenters import present_candidate, present_pass
+from la_haut.interface.http.presenters import (
+    present_candidate,
+    present_identification,
+    present_pass,
+)
 from tests.support.builders import (
     DEFAULT_INSTANT,
     ONE_MINUTE,
@@ -112,3 +117,13 @@ def test_a_satellite_candidate_is_presented_as_its_pass():
     visible_pass = a_visible_pass()
 
     assert present_candidate(visible_pass) == present_pass(visible_pass)
+
+
+def test_an_identification_presents_its_candidates_and_whether_the_satellites_were_checked():
+    venus = a_planet_position()
+
+    presented = present_identification(
+        Identification(candidates=(venus,), satellites_checked=False)
+    )
+
+    assert presented == {"candidates": [present_candidate(venus)], "satellites_checked": False}

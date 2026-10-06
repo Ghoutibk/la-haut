@@ -15,7 +15,7 @@ from la_haut.domain.compass_point import CompassPoint
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import InvalidSightingError, Sighting
 from la_haut.domain.time_window import TimeWindow
-from la_haut.interface.http.presenters import present_candidate, present_pass
+from la_haut.interface.http.presenters import present_identification, present_pass
 
 Latitude = Annotated[float, Query(ge=-90, le=90)]
 Longitude = Annotated[float, Query(ge=-180, le=180)]
@@ -74,9 +74,6 @@ def create_app(
     ) -> dict:
         observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
         sighting = Sighting(at=at, direction=direction)
-        identification = identify_sighting.execute(observer, sighting)
-        return {
-            "candidates": [present_candidate(candidate) for candidate in identification.candidates]
-        }
+        return present_identification(identify_sighting.execute(observer, sighting))
 
     return app

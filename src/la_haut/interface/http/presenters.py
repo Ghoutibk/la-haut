@@ -1,6 +1,7 @@
 """Traduction des objets du domaine en JSON pour la page web."""
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.identification import Identification
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.visible_pass import VisiblePass
 
@@ -69,3 +70,11 @@ def present_candidate(candidate: VisiblePass | PlanetPosition) -> dict:
     if isinstance(candidate, PlanetPosition):
         return present_planet(candidate)
     return present_pass(candidate)
+
+
+def present_identification(identification: Identification) -> dict:
+    """La réponse à « C'était quoi, ça ? », et si les satellites ont pu être vérifiés."""
+    return {
+        "candidates": [present_candidate(candidate) for candidate in identification.candidates],
+        "satellites_checked": identification.satellites_checked,
+    }
