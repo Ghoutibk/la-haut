@@ -3,6 +3,7 @@
 from datetime import datetime
 from typing import Protocol
 
+from la_haut.domain.feedback import Feedback
 from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
@@ -15,6 +16,10 @@ from la_haut.domain.visible_pass import VisiblePass
 
 class CatalogUnavailableError(RuntimeError):
     """Aucun catalogue de satellites n'est disponible, même ancien."""
+
+
+class FeedbackUnavailableError(RuntimeError):
+    """La boîte à avis est injoignable ou pas encore configurée."""
 
 
 class SatelliteCatalog(Protocol):
@@ -51,3 +56,9 @@ class SightingIdentification(Protocol):
     """Ce que l'interface attend de « c'était quoi, ça ? », planètes comprises ou non."""
 
     def execute(self, observer: Observer, sighting: Sighting) -> Identification: ...
+
+
+class FeedbackInbox(Protocol):
+    def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
+        """Remet l'avis d'un visiteur à l'auteur du site."""
+        ...
