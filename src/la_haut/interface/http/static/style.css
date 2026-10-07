@@ -188,6 +188,58 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 500; }
 
 .field textarea { min-height: 120px; padding: 10px 12px; resize: vertical; }
 
+.top-actions { display: flex; align-items: center; gap: 8px; }
+.chip-button { border: 0; font: inherit; font-size: 13px; cursor: pointer; }
+
+.link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sky-blue);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La fenêtre d'avis monte du bas de l'écran, comme une feuille sur un téléphone. */
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92dvh;
+  margin: auto auto 0;
+  padding: 18px 16px max(20px, env(safe-area-inset-bottom));
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  background: var(--night);
+  color: var(--text);
+  overflow-y: auto;
+}
+
+.sheet::backdrop { background: rgb(0 0 0 / 0.6); }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head .eyebrow { margin: 0; }
+
+.sheet-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sheet-title {
+  margin: 4px 0 8px;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.05;
+}
+
 /* Piège à robots : hors de l'écran pour les humains, rempli par les robots qui lisent le code. */
 .trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
@@ -235,7 +287,7 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 500; }
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   max-width: 480px;
   margin: 0 auto;
   padding: 6px 0 max(10px, env(safe-area-inset-bottom));

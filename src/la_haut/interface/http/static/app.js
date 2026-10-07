@@ -159,10 +159,11 @@ function renderCandidates(result, candidates, satellitesChecked) {
 }
 
 function feedbackLink() {
-  const link = element("a", null, "Ce n'était pas ça ? Dis-le-nous");
-  link.href = "#avis";
+  const button = element("button", "link-button", "Ce n'était pas ça ? Dis-le-nous");
+  button.type = "button";
+  button.addEventListener("click", openFeedback);
   const paragraph = element("p", "hint");
-  paragraph.append(link);
+  paragraph.append(button);
   return paragraph;
 }
 
@@ -321,9 +322,30 @@ async function postJson(path, body) {
   return answer;
 }
 
+// La fenêtre d'avis s'ouvre toujours sur un formulaire prêt à écrire.
+function openFeedback() {
+  $("#feedback-result").hidden = true;
+  $("#feedback-form").hidden = false;
+  $("#feedback-error").textContent = "";
+  $("#feedback-dialog").showModal();
+}
+
 function setUpFeedback() {
+  const dialog = $("#feedback-dialog");
   const form = $("#feedback-form");
   const result = $("#feedback-result");
+
+  $("#feedback-open").addEventListener("click", openFeedback);
+  $("#feedback-close").addEventListener("click", () => dialog.close());
+  // Un toucher sur le fond assombri ferme aussi la fenêtre. Seul un clic visant la fenêtre
+  // elle-même compte : un bouton activé au clavier envoie un clic sans coordonnées.
+  dialog.addEventListener("click", (event) => {
+    if (event.target !== dialog) return;
+    const box = dialog.getBoundingClientRect();
+    const outside =
+      event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom;
+    if (outside) dialog.close();
+  });
   const kindButtons = [...document.querySelectorAll("[data-kind]")];
 
   kindButtons.forEach((button) =>
@@ -367,7 +389,7 @@ function setUpFeedback() {
 
 // ---------- Onglets ----------
 
-const VIEWS = { "#ce-soir": "tonight", "#cetait-quoi": "identify", "#avis": "feedback" };
+const VIEWS = { "#ce-soir": "tonight", "#cetait-quoi": "identify" };
 
 function showView() {
   const view = VIEWS[location.hash] ?? "tonight";
@@ -385,6 +407,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   showView();
   setUpIdentification();
   setUpFeedback();
+  // L'ancienne adresse de l'onglet « Ton avis » ouvre la fenêtre d'avis.
+  if (location.hash === "#avis") openFeedback();
   observer = await locateObserver();
   $("#place-label").textContent = observer.label;
   showTonight();
