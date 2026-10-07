@@ -8,7 +8,7 @@ Pour un observateur et une période, Là-haut liste les passages visibles à l'�
 
 À partir d'un signalement (« j'ai vu une lumière à telle heure, direction sud-est »), Là-haut retrouve aussi ce qui était là : c'est « C'était quoi, ça ? ». Il cherche d'abord parmi les satellites suivis, trains Starlink compris, puis parmi les planètes brillantes que l'on prend souvent pour un satellite ou un avion : Vénus, Jupiter, Mars et Saturne. Une planète est candidate si elle était au-dessus de l'horizon, dans un ciel assez sombre (Soleil à −6° ou moins), dans la direction indiquée ou une direction voisine ; les planètes sont classées de la plus proche à la plus éloignée de cette direction, après les satellites. Leurs positions sont calculées hors ligne avec les éphémérides DE421 embarquées : sans aucun catalogue de satellites, les planètes répondent quand même, et la réponse précise que les satellites n'ont pas pu être vérifiés.
 
-Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir » et « C'était quoi ? », appuyée sur une API HTTP. Pour dire où la lumière était, inutile de connaître les points cardinaux : sur un téléphone, « Viser avec mon téléphone » lit la boussole. On tient le téléphone à plat, le haut de l'écran vers l'endroit où on a vu la lumière, et la direction se choisit en direct jusqu'à « C'est là ». L'iPhone demande d'abord l'autorisation. Sans boussole, ou sur un ordinateur, on choisit parmi huit boutons, avec un repère : le Soleil se lève vers l'est et se couche vers l'ouest.
+Les deux sont accessibles sur un site web : une page mobile avec les onglets « Ce soir », « C'était quoi ? » et « Ton avis », appuyée sur une API HTTP. « Ton avis » permet de signaler un problème ou de proposer une idée, avec un e-mail facultatif pour recevoir une réponse ; chaque message devient un ticket du dépôt privé `Ghoutibk/la-haut-avis`. Pour dire où la lumière était, inutile de connaître les points cardinaux : sur un téléphone, « Viser avec mon téléphone » lit la boussole. On tient le téléphone à plat, le haut de l'écran vers l'endroit où on a vu la lumière, et la direction se choisit en direct jusqu'à « C'est là ». L'iPhone demande d'abord l'autorisation. Sans boussole, ou sur un ordinateur, on choisit parmi huit boutons, avec un repère : le Soleil se lève vers l'est et se couche vers l'ouest.
 
 ## Démarrer
 
@@ -33,6 +33,7 @@ Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur P
 | `GET /health` | Vérification de santé pour l'hébergeur : répond 200 sans rien calculer |
 | `GET /api/passes?latitude=&longitude=&hours=12` | Les passages visibles des prochaines heures (1 à 48) |
 | `GET /api/identification?latitude=&longitude=&at=&direction=` | « C'était quoi, ça ? » : `at` en ISO 8601 avec fuseau, `direction` parmi N, NE, E, SE, S, SW, W, NW. Chaque candidat porte un `kind` : `satellite`, `train` ou `planet`. `satellites_checked` vaut `false` quand le catalogue des satellites manquait et que seules les planètes ont été cherchées |
+| `POST /api/feedback` | Un avis en JSON : `kind` parmi `problem`, `idea`, `other`, `message` (2 000 caractères au plus), `contact` facultatif. Répond 201, 422 avec une raison lisible, 429 au-delà de 20 avis par heure, ou 503 si la boîte à avis est indisponible |
 
 ## Lancer l'image Docker
 
@@ -67,6 +68,18 @@ CelesTrak ne répond pas à Render. Le workflow GitHub Actions « Relais des cat
 - GitHub suspend les workflows programmés d'un dépôt public après 60 jours sans activité sur le dépôt : il faut alors le réactiver dans l'onglet **Actions**.
 - Si le relais s'arrête, le site continue avec la dernière copie publiée, qui vieillit : les heures de passage se décalent peu à peu au fil des jours.
 - Ne supprime pas la release `catalogues` : le site la lit.
+
+### Recevoir les avis
+
+Les avis arrivent en tickets du dépôt privé `Ghoutibk/la-haut-avis`, étiquetés `problème`, `idée` ou `autre`. GitHub te prévient à chaque nouveau ticket. Le site a besoin d'un jeton qui ne peut écrire que les tickets de ce dépôt :
+
+1. Sur GitHub, ouvre [la création d'un jeton à accès fin](https://github.com/settings/personal-access-tokens/new). Nomme-le `la-haut avis` et choisis une durée de validité.
+2. **Repository access** → **Only select repositories** → `la-haut-avis`.
+3. **Permissions** → **Repository permissions** → **Issues** : **Read and write**. Rien d'autre.
+4. Génère le jeton et copie-le.
+5. Sur Render, dans le service `la-haut` → **Environment**, donne sa valeur à `LA_HAUT_FEEDBACK_TOKEN`, puis enregistre : le service redémarre.
+
+Sans jeton, l'onglet « Ton avis » répond que l'envoi est indisponible. Le message d'un visiteur est placé dans un bloc de code, où une mention `@quelqu'un` ne notifie personne. Un champ caché piège les robots, et au-delà de 20 avis par heure, le site demande d'attendre. À l'expiration du jeton, les avis cessent d'arriver : il faut en créer un nouveau.
 
 ## Architecture
 
@@ -115,6 +128,10 @@ src/la_haut/
 | Candidat | `SightingIdentification` | Ce que propose « C'était quoi, ça ? » : un passage (satellite ou train Starlink) ou une planète, les satellites d'abord |
 | Identification | `Identification` | La réponse à « C'était quoi, ça ? » : les candidats, du plus au moins probable |
 | Satellites vérifiés | `Identification.satellites_checked` | Faux quand le catalogue des satellites manquait : seules les planètes ont été cherchées, et la page le dit |
+| Avis | `Feedback` | Un message d'un visiteur à l'auteur du site, avec son e-mail facultatif pour une réponse |
+| Nature de l'avis | `FeedbackKind` | Un problème, une idée ou autre chose |
+| Boîte à avis | `FeedbackInbox` | Port : là où l'avis est remis ; en ligne, les tickets du dépôt privé |
+| Plafond horaire | `MAX_FEEDBACK_PER_HOUR` | Au plus 20 avis remis par heure, contre les envois en masse |
 | Délai avant nouvel essai | `CELESTRAK_RETRY_DELAY` | Après un téléchargement raté, le temps pendant lequel CelesTrak n'est pas redemandé |
 | Relais des catalogues | `LA_HAUT_CATALOG_URL`, release `catalogues` | Une copie des groupes CelesTrak, servie un fichier `<groupe>.csv` par groupe, là où CelesTrak ne répond pas |
 

@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from la_haut.application.ports import CatalogUnavailableError
+from la_haut.application.ports import CatalogUnavailableError, FeedbackUnavailableError
+from la_haut.domain.feedback import Feedback
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite
@@ -63,3 +64,20 @@ class FakePlanetLocator:
         self.requests.append((planet, observer, at))
         below_the_horizon = PlanetPosition(planet, at, 0.0, -30.0, -30.0)
         return self._positions.get(planet, below_the_horizon)
+
+
+class FakeFeedbackInbox:
+    """Retient chaque avis remis, avec son heure d'envoi."""
+
+    def __init__(self) -> None:
+        self.delivered: list[tuple[Feedback, datetime]] = []
+
+    def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
+        self.delivered.append((feedback, sent_at))
+
+
+class UnavailableFeedbackInbox:
+    """Une boîte à avis injoignable."""
+
+    def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
+        raise FeedbackUnavailableError("GitHub injoignable")

@@ -138,6 +138,7 @@ function renderIdentification({ candidates, satellites_checked: satellitesChecke
     );
   }
   if (!satellitesChecked) result.append(element("p", null, SATELLITES_UNCHECKED));
+  result.append(feedbackLink());
 }
 
 function renderCandidates(result, candidates, satellitesChecked) {
@@ -155,6 +156,14 @@ function renderCandidates(result, candidates, satellitesChecked) {
   if (others.length) {
     result.append(element("p", null, `Ou peut-être : ${others.map((candidate) => candidate.name).join(", ")}.`));
   }
+}
+
+function feedbackLink() {
+  const link = element("a", null, "Ce n'était pas ça ? Dis-le-nous");
+  link.href = "#avis";
+  const paragraph = element("p", "hint");
+  paragraph.append(link);
+  return paragraph;
 }
 
 function renderPassIdentification(result, best) {
@@ -295,14 +304,74 @@ function setUpIdentification() {
   });
 }
 
+// ---------- Ton avis ----------
+
+const feedback = { kind: "problem" };
+
+async function postJson(path, body) {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const answer = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(typeof answer.detail === "string" ? answer.detail : "Ton message n'a pas pu partir : vérifie-le et réessaie.");
+  }
+  return answer;
+}
+
+function setUpFeedback() {
+  const form = $("#feedback-form");
+  const result = $("#feedback-result");
+  const kindButtons = [...document.querySelectorAll("[data-kind]")];
+
+  kindButtons.forEach((button) =>
+    button.addEventListener("click", () => {
+      feedback.kind = button.dataset.kind;
+      press(kindButtons, button);
+    }),
+  );
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const error = $("#feedback-error");
+    const message = $("#feedback-message").value.trim();
+    if (!message) return void (error.textContent = "Écris ton message avant de l'envoyer.");
+
+    const submit = event.submitter ?? $("#feedback-form .primary");
+    submit.setAttribute("aria-busy", "true");
+    error.textContent = "";
+    try {
+      await postJson("/api/feedback", {
+        kind: feedback.kind,
+        message,
+        contact: $("#feedback-contact").value.trim() || null,
+        website: $("#feedback-website").value,
+      });
+      form.reset();
+      form.hidden = true;
+      result.hidden = false;
+    } catch (failure) {
+      error.textContent = failure.message;
+    } finally {
+      submit.removeAttribute("aria-busy");
+    }
+  });
+
+  $("#feedback-again").addEventListener("click", () => {
+    result.hidden = true;
+    form.hidden = false;
+  });
+}
+
 // ---------- Onglets ----------
 
-const VIEWS = { "#ce-soir": "tonight", "#cetait-quoi": "identify" };
+const VIEWS = { "#ce-soir": "tonight", "#cetait-quoi": "identify", "#avis": "feedback" };
 
 function showView() {
   const view = VIEWS[location.hash] ?? "tonight";
-  $("#view-tonight").hidden = view !== "tonight";
-  $("#view-identify").hidden = view !== "identify";
+  for (const name of Object.values(VIEWS)) $(`#view-${name}`).hidden = view !== name;
   document.querySelectorAll(".tab").forEach((tab) => {
     if (tab.dataset.view === view) tab.setAttribute("aria-current", "page");
     else tab.removeAttribute("aria-current");
@@ -315,6 +384,7 @@ window.addEventListener("hashchange", showView);
 document.addEventListener("DOMContentLoaded", async () => {
   showView();
   setUpIdentification();
+  setUpFeedback();
   observer = await locateObserver();
   $("#place-label").textContent = observer.label;
   showTonight();

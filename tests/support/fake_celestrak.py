@@ -43,7 +43,10 @@ class FakeCelestrak:
         self.relay_url_template = base + "/releases/download/catalogues/{group}.csv"
 
     def __enter__(self) -> "FakeCelestrak":
-        threading.Thread(target=self._server.serve_forever, daemon=True).start()
+        # Scrutation courte : l'arrêt du serveur n'attend pas une demi-seconde à chaque test.
+        threading.Thread(
+            target=self._server.serve_forever, kwargs={"poll_interval": 0.01}, daemon=True
+        ).start()
         return self
 
     def __exit__(self, *exc) -> None:

@@ -12,10 +12,16 @@ from la_haut.application.identify_sighting_with_planets import IdentifySightingW
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.list_visible_passes_by_slot import ListVisiblePassesBySlot
 from la_haut.application.ports import SatelliteCatalog
+from la_haut.application.send_feedback import SendFeedback
 from la_haut.application.starlink_catalog import StarlinkCatalog
 from la_haut.infrastructure.celestrak_satellite_catalog import (
     CELESTRAK_URL_TEMPLATE,
     CelestrakSatelliteCatalog,
+)
+from la_haut.infrastructure.github_feedback_inbox import (
+    GITHUB_API_URL,
+    GitHubIssuesFeedbackInbox,
+    UnconfiguredFeedbackInbox,
 )
 from la_haut.infrastructure.skyfield_planet_locator import SkyfieldPlanetLocator
 from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
@@ -73,18 +79,39 @@ def build_identify_sighting_from_celestrak(
     return _identify_sighting(build_list_visible_passes_from_celestrak(cache_path, url_template))
 
 
-def build_web_app(cache_path: Path | None = None, url_template: str | None = None) -> FastAPI:
+def build_send_feedback(
+    repository: str | None, token: str | None, api_url: str = GITHUB_API_URL
+) -> SendFeedback:
+    """Les avis des visiteurs, en tickets d'un dépôt GitHub privé ; sans jeton, rien ne part."""
+    if repository and token:
+        return SendFeedback(GitHubIssuesFeedbackInbox(repository, token, api_url=api_url))
+    return SendFeedback(UnconfiguredFeedbackInbox())
+
+
+def build_web_app(
+    cache_path: Path | None = None,
+    url_template: str | None = None,
+    feedback_api_url: str = GITHUB_API_URL,
+) -> FastAPI:
     """Le site Là-haut : uvicorn --factory la_haut.composition:build_web_app
 
     Le cache CelesTrak se règle avec la variable d'environnement LA_HAUT_CACHE. La source des
     catalogues se règle avec LA_HAUT_CATALOG_URL, une adresse où {group} est remplacé par le nom
-    du groupe : CelesTrak par défaut, ou un relais qui le recopie.
+    du groupe : CelesTrak par défaut, ou un relais qui le recopie. Les avis partent en tickets du
+    dépôt LA_HAUT_FEEDBACK_REPO, avec le jeton LA_HAUT_FEEDBACK_TOKEN.
     """
     cache_path = cache_path or Path(os.environ.get("LA_HAUT_CACHE", DEFAULT_CACHE_PATH))
     url_template = url_template or os.environ.get("LA_HAUT_CATALOG_URL", CELESTRAK_URL_TEMPLATE)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
     # « Ce soir » se resert par quarts d'heure ; l'identification calcule au moment signalé.
+    send_feedback = build_send_feedback(
+        os.environ.get("LA_HAUT_FEEDBACK_REPO"),
+        os.environ.get("LA_HAUT_FEEDBACK_TOKEN"),
+        api_url=feedback_api_url,
+    )
     return create_app(
-        ListVisiblePassesBySlot(list_visible_passes), _identify_sighting(list_visible_passes)
+        ListVisiblePassesBySlot(list_visible_passes),
+        _identify_sighting(list_visible_passes),
+        send_feedback=send_feedback,
     )

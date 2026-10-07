@@ -176,7 +176,7 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 500; }
 
 .field { display: grid; gap: 6px; margin-top: 12px; font-size: 14px; color: var(--text-soft); }
 
-.field input {
+.field input, .field textarea {
   min-height: 44px;
   padding: 0 12px;
   border-radius: 12px;
@@ -185,6 +185,11 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 500; }
   color: var(--text);
   font: inherit;
 }
+
+.field textarea { min-height: 120px; padding: 10px 12px; resize: vertical; }
+
+/* Piège à robots : hors de l'écran pour les humains, rempli par les robots qui lisent le code. */
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 
 .primary {
   width: 100%;
@@ -230,7 +235,7 @@ legend { padding: 0; margin-bottom: 10px; font-weight: 500; }
   right: 0;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   max-width: 480px;
   margin: 0 auto;
   padding: 6px 0 max(10px, env(safe-area-inset-bottom));

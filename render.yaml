@@ -16,3 +16,9 @@ services:
       # CelesTrak ne répond pas à Render : les catalogues viennent du relais GitHub du dépôt.
       - key: LA_HAUT_CATALOG_URL
         value: https://github.com/Ghoutibk/la-haut/releases/download/catalogues/{group}.csv
+      # Les avis des visiteurs deviennent des tickets de ce dépôt privé.
+      - key: LA_HAUT_FEEDBACK_REPO
+        value: Ghoutibk/la-haut-avis
+      # Jeton GitHub limité aux tickets de ce dépôt : il se saisit dans Render, jamais dans le code.
+      - key: LA_HAUT_FEEDBACK_TOKEN
+        sync: false
