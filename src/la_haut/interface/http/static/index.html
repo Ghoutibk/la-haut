@@ -19,10 +19,16 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-20 12 12)"/></svg>
         <span>Là-haut</span>
       </div>
-      <span class="chip" id="place">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
-        <span id="place-label">Paris</span>
-      </span>
+      <div class="top-actions">
+        <span class="chip" id="place">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+          <span id="place-label">Paris</span>
+        </span>
+        <button type="button" class="chip chip-button" id="feedback-open" aria-haspopup="dialog">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.1A8 8 0 1 1 20 12z"/></svg>
+          Avis
+        </button>
+      </div>
     </header>
 
     <main>
@@ -84,47 +90,6 @@
         <div class="result" id="identify-result" aria-live="polite"></div>
       </section>
 
-      <section id="view-feedback" class="view" aria-labelledby="feedback-title" hidden>
-        <p class="eyebrow">Ton avis</p>
-        <h1 id="feedback-title">Un souci, une idée ?</h1>
-        <p class="lede">Dis-nous ce qui ne marche pas ou ce qui te manquerait. Ton message n'est lu que par l'auteur du site.</p>
-
-        <form id="feedback-form" novalidate>
-          <fieldset>
-            <legend>C'est plutôt…</legend>
-            <div class="chips">
-              <button type="button" class="choice" data-kind="problem" aria-pressed="true">Un problème</button>
-              <button type="button" class="choice" data-kind="idea" aria-pressed="false">Une idée</button>
-              <button type="button" class="choice" data-kind="other" aria-pressed="false">Autre chose</button>
-            </div>
-          </fieldset>
-
-          <label class="field">
-            <span>Ton message</span>
-            <textarea id="feedback-message" rows="5" maxlength="2000" placeholder="Par exemple : la boussole ne bouge pas sur mon téléphone."></textarea>
-          </label>
-
-          <label class="field">
-            <span>Ton e-mail, si tu veux une réponse (facultatif)</span>
-            <input type="email" id="feedback-contact" autocomplete="email" maxlength="254">
-          </label>
-          <p class="hint">Ton e-mail ne sert qu'à te répondre. Il n'est jamais affiché sur le site.</p>
-
-          <div class="trap" aria-hidden="true">
-            <label>Ne remplis pas ce champ <input type="text" id="feedback-website" tabindex="-1" autocomplete="off"></label>
-          </div>
-
-          <p class="error" id="feedback-error" role="alert"></p>
-          <button type="submit" class="primary">Envoyer</button>
-        </form>
-
-        <div class="result" id="feedback-result" aria-live="polite" hidden>
-          <p class="eyebrow">Bien reçu</p>
-          <h2>Merci !</h2>
-          <p>Ton message est arrivé chez l'auteur du site. Si tu as laissé ton e-mail, il pourra te répondre.</p>
-          <button type="button" class="choice" id="feedback-again">Écrire un autre message</button>
-        </div>
-      </section>
     </main>
 
     <nav class="tabs" aria-label="Navigation principale">
@@ -136,11 +101,52 @@
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
         <span>C'était quoi ?</span>
       </a>
-      <a class="tab" href="#avis" data-view="feedback">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 0 1-11.6 7.1L4 20l1-4.1A8 8 0 1 1 20 12z"/></svg>
-        <span>Ton avis</span>
-      </a>
     </nav>
+
+    <dialog class="sheet" id="feedback-dialog" aria-labelledby="feedback-title">
+      <div class="sheet-head">
+        <p class="eyebrow">Ton avis</p>
+        <button type="button" class="sheet-close" id="feedback-close" aria-label="Fermer">×</button>
+      </div>
+      <h2 class="sheet-title" id="feedback-title">Un souci, une idée ?</h2>
+      <p class="lede">Dis-nous ce qui ne marche pas ou ce qui te manquerait. Ton message n'est lu que par l'auteur du site.</p>
+
+      <form id="feedback-form" novalidate>
+        <fieldset>
+          <legend>C'est plutôt…</legend>
+          <div class="chips">
+            <button type="button" class="choice" data-kind="problem" aria-pressed="true">Un problème</button>
+            <button type="button" class="choice" data-kind="idea" aria-pressed="false">Une idée</button>
+            <button type="button" class="choice" data-kind="other" aria-pressed="false">Autre chose</button>
+          </div>
+        </fieldset>
+
+        <label class="field">
+          <span>Ton message</span>
+          <textarea id="feedback-message" rows="5" maxlength="2000" placeholder="Par exemple : la boussole ne bouge pas sur mon téléphone."></textarea>
+        </label>
+
+        <label class="field">
+          <span>Ton e-mail, si tu veux une réponse (facultatif)</span>
+          <input type="email" id="feedback-contact" autocomplete="email" maxlength="254">
+        </label>
+        <p class="hint">Ton e-mail ne sert qu'à te répondre. Il n'est jamais affiché sur le site.</p>
+
+        <div class="trap" aria-hidden="true">
+          <label>Ne remplis pas ce champ <input type="text" id="feedback-website" tabindex="-1" autocomplete="off"></label>
+        </div>
+
+        <p class="error" id="feedback-error" role="alert"></p>
+        <button type="submit" class="primary">Envoyer</button>
+      </form>
+
+      <div class="result" id="feedback-result" aria-live="polite" hidden>
+        <p class="eyebrow">Bien reçu</p>
+        <h2>Merci !</h2>
+        <p>Ton message est arrivé chez l'auteur du site. Si tu as laissé ton e-mail, il pourra te répondre.</p>
+        <button type="button" class="choice" id="feedback-again">Écrire un autre message</button>
+      </div>
+    </dialog>
   </div>
 </body>
 </html>
