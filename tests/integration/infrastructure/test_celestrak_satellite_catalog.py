@@ -21,6 +21,7 @@ THREE_HOURS_S = 3 * 3600
 # Chaque façon dont la source des catalogues peut échouer, et la cause qu'en gardent les logs.
 SOURCE_FAILURES = {
     "error 503": (lambda celestrak: celestrak.fails_with(503), "503"),
+    "web page": (lambda celestrak: celestrak.publishes_a_web_page(), "OBJECT_NAME"),
 }
 
 

@@ -66,5 +66,13 @@ class FakeCelestrak:
         """Publie ces TLE (nom, ligne 1, ligne 2), convertis en catalogue OMM au format CSV."""
         self.publishes(*omm_csv_from_tle(*entries).splitlines(), group=group)
 
+    def publishes_a_web_page(self) -> None:
+        """Répond une page web, comme une page de maintenance, au lieu d'un catalogue."""
+        self.publishes(
+            "<!DOCTYPE html>",
+            "<html><head><title>Maintenance</title></head>",
+            "<body>Back soon.</body></html>",
+        )
+
     def fails_with(self, status: int) -> None:
         self.status = status

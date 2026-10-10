@@ -2,7 +2,7 @@ import pytest
 
 from la_haut.domain.orbit_mean_elements import InvalidOrbitMeanElementsError
 from la_haut.domain.starlink import is_starlink
-from la_haut.infrastructure.omm_csv import parse_omm_csv
+from la_haut.infrastructure.omm_csv import InvalidOmmCatalogError, parse_omm_csv
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
 
 
@@ -23,6 +23,11 @@ def test_each_satellite_keeps_its_name_and_its_elements():
 
 def test_an_answer_without_data_holds_no_satellite():
     assert parse_omm_csv("No GP data found") == []
+
+
+def test_a_web_page_is_not_a_catalog():
+    with pytest.raises(InvalidOmmCatalogError):
+        parse_omm_csv("<!DOCTYPE html>\n<html><body>Maintenance</body></html>\n")
 
 
 def test_a_row_missing_an_element_is_rejected():

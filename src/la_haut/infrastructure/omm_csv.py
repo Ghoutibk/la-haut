@@ -4,10 +4,20 @@ import io
 from la_haut.domain.orbit_mean_elements import OrbitMeanElements
 from la_haut.domain.satellite import Satellite
 
+NAME_FIELD = "OBJECT_NAME"
+
+
+class InvalidOmmCatalogError(ValueError):
+    """Des lignes sans nom d'objet ne forment pas un catalogue OMM : une page web, par exemple."""
+
 
 def parse_omm_csv(text: str) -> list[Satellite]:
     """Lit un catalogue OMM au format CSV de CelesTrak : un satellite par ligne, après l'en-tête."""
-    return [
-        Satellite(name=row["OBJECT_NAME"].strip(), elements=OrbitMeanElements.from_fields(row))
-        for row in csv.DictReader(io.StringIO(text))
-    ]
+    return [_satellite_from(row) for row in csv.DictReader(io.StringIO(text))]
+
+
+def _satellite_from(row: dict[str, str]) -> Satellite:
+    name = row.get(NAME_FIELD)
+    if name is None:
+        raise InvalidOmmCatalogError(f"Ligne sans {NAME_FIELD} : ce n'est pas un catalogue OMM")
+    return Satellite(name=name.strip(), elements=OrbitMeanElements.from_fields(row))
