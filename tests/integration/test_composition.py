@@ -1,5 +1,7 @@
+import logging
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from fastapi.testclient import TestClient
 
 from la_haut.composition import (
@@ -155,3 +157,43 @@ def test_without_repository_nor_token_the_web_app_sends_no_feedback(tmp_path, mo
         response = TestClient(app).post("/api/feedback", json=A_PROBLEM)
 
     assert response.status_code == 503
+    assert "pas encore configuré" in response.json()["detail"]
+
+
+def test_the_feedback_settings_are_read_without_the_spaces_around_them(tmp_path, monkeypatch):
+    monkeypatch.setenv("LA_HAUT_FEEDBACK_REPO", " Ghoutibk/la-haut-avis\n")
+    monkeypatch.setenv("LA_HAUT_FEEDBACK_TOKEN", " jeton-de-test \n")
+
+    with FakeCelestrak() as celestrak, FakeGitHub() as github:
+        app = build_web_app(
+            tmp_path / "visual.csv",
+            url_template=celestrak.url_template,
+            feedback_api_url=github.url,
+        )
+        TestClient(app).post("/api/feedback", json=A_PROBLEM)
+
+    [request] = github.requests
+    assert request["path"] == "/repos/Ghoutibk/la-haut-avis/issues"
+    assert request["headers"]["Authorization"] == "Bearer jeton-de-test"
+
+
+@pytest.mark.parametrize(
+    "present, missing",
+    [
+        ("LA_HAUT_FEEDBACK_REPO", "LA_HAUT_FEEDBACK_TOKEN"),
+        ("LA_HAUT_FEEDBACK_TOKEN", "LA_HAUT_FEEDBACK_REPO"),
+    ],
+)
+def test_a_missing_feedback_setting_is_named_in_the_logs_at_startup_but_never_a_value(
+    tmp_path, monkeypatch, caplog, present, missing
+):
+    monkeypatch.setenv(present, "valeur-secrete")
+    monkeypatch.delenv(missing, raising=False)
+
+    with FakeCelestrak() as celestrak, caplog.at_level(logging.WARNING):
+        build_web_app(tmp_path / "visual.csv", url_template=celestrak.url_template)
+
+    [record] = [r for r in caplog.records if "avis" in r.getMessage().lower()]
+    assert missing in record.getMessage()
+    assert present not in record.getMessage()
+    assert "valeur-secrete" not in record.getMessage()

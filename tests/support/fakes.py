@@ -2,7 +2,11 @@
 
 from datetime import datetime
 
-from la_haut.application.ports import CatalogUnavailableError, FeedbackUnavailableError
+from la_haut.application.ports import (
+    CatalogUnavailableError,
+    FeedbackNotConfiguredError,
+    FeedbackUnavailableError,
+)
 from la_haut.domain.feedback import Feedback
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
@@ -81,3 +85,10 @@ class UnavailableFeedbackInbox:
 
     def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
         raise FeedbackUnavailableError("GitHub injoignable")
+
+
+class NotConfiguredFeedbackInbox:
+    """Une boîte à avis sans dépôt ni jeton."""
+
+    def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
+        raise FeedbackNotConfiguredError("Aucun dépôt ni jeton")

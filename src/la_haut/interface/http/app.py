@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from la_haut.application.ports import (
     CatalogUnavailableError,
+    FeedbackNotConfiguredError,
     FeedbackUnavailableError,
     SightingIdentification,
     VisiblePassesListing,
@@ -83,6 +84,11 @@ def create_app(
     @app.exception_handler(FeedbackUnavailableError)
     def report_unavailable_feedback(_: Request, __: FeedbackUnavailableError) -> JSONResponse:
         detail = "L'envoi des avis est indisponible pour le moment, réessaie plus tard."
+        return JSONResponse(status_code=503, content={"detail": detail})
+
+    @app.exception_handler(FeedbackNotConfiguredError)
+    def report_unconfigured_feedback(_: Request, __: FeedbackNotConfiguredError) -> JSONResponse:
+        detail = "L'envoi des avis n'est pas encore configuré sur ce site."
         return JSONResponse(status_code=503, content={"detail": detail})
 
     @app.exception_handler(FeedbackLimitReachedError)

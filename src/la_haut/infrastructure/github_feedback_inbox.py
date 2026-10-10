@@ -7,7 +7,7 @@ from datetime import datetime
 
 import certifi
 
-from la_haut.application.ports import FeedbackUnavailableError
+from la_haut.application.ports import FeedbackNotConfiguredError, FeedbackUnavailableError
 from la_haut.domain.feedback import Feedback, FeedbackKind
 
 GITHUB_API_URL = "https://api.github.com"
@@ -92,4 +92,4 @@ class UnconfiguredFeedbackInbox:
     """Adaptateur FeedbackInbox quand aucun dépôt ni jeton n'est réglé : rien ne part."""
 
     def deliver(self, feedback: Feedback, sent_at: datetime) -> None:
-        raise FeedbackUnavailableError("La boîte à avis n'est pas configurée")
+        raise FeedbackNotConfiguredError("La boîte à avis n'est pas configurée")

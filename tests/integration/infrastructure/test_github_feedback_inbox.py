@@ -2,7 +2,7 @@ import logging
 
 import pytest
 
-from la_haut.application.ports import FeedbackUnavailableError
+from la_haut.application.ports import FeedbackNotConfiguredError, FeedbackUnavailableError
 from la_haut.domain.feedback import Feedback, FeedbackKind
 from la_haut.infrastructure.github_feedback_inbox import (
     GitHubIssuesFeedbackInbox,
@@ -98,6 +98,6 @@ def test_an_unreachable_github_makes_the_inbox_unavailable():
         inbox.deliver(A_PROBLEM, DEFAULT_INSTANT)
 
 
-def test_an_inbox_without_repository_or_token_is_unavailable():
-    with pytest.raises(FeedbackUnavailableError):
+def test_an_inbox_without_repository_or_token_says_it_is_not_configured():
+    with pytest.raises(FeedbackNotConfiguredError):
         UnconfiguredFeedbackInbox().deliver(A_PROBLEM, DEFAULT_INSTANT)

@@ -22,6 +22,10 @@ class FeedbackUnavailableError(RuntimeError):
     """La boîte à avis est injoignable ou pas encore configurée."""
 
 
+class FeedbackNotConfiguredError(FeedbackUnavailableError):
+    """Aucun dépôt ni jeton n'est réglé : les avis ne partent nulle part."""
+
+
 class SatelliteCatalog(Protocol):
     def tracked_satellites(self) -> list[Satellite]:
         """Les satellites que Là-haut suit pour ses utilisateurs."""

@@ -1,5 +1,6 @@
 """Racine de composition : seul endroit qui connaît cas d'usage et adaptateurs à la fois."""
 
+import logging
 import os
 from pathlib import Path
 
@@ -31,6 +32,10 @@ from la_haut.interface.http.app import create_app
 DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.csv"
 # Les lancements des 30 derniers jours : les Starlink qui défilent encore en train.
 RECENT_LAUNCHES_GROUP = "last-30-days"
+FEEDBACK_REPOSITORY_SETTING = "LA_HAUT_FEEDBACK_REPO"
+FEEDBACK_TOKEN_SETTING = "LA_HAUT_FEEDBACK_TOKEN"
+
+logger = logging.getLogger(__name__)
 
 
 def _list_visible_passes(catalog: SatelliteCatalog) -> ListVisiblePasses:
@@ -88,6 +93,21 @@ def build_send_feedback(
     return SendFeedback(UnconfiguredFeedbackInbox())
 
 
+def _send_feedback_from_environment(api_url: str) -> SendFeedback:
+    """Les réglages d'avis, sans les espaces collés autour ; un réglage absent est nommé dans les
+    logs dès le démarrage, sans jamais écrire une valeur."""
+    settings = {
+        name: os.environ.get(name, "").strip()
+        for name in (FEEDBACK_REPOSITORY_SETTING, FEEDBACK_TOKEN_SETTING)
+    }
+    missing = [name for name, value in settings.items() if not value]
+    if missing:
+        logger.warning("Avis désactivés, réglage absent : %s", ", ".join(missing))
+    return build_send_feedback(
+        settings[FEEDBACK_REPOSITORY_SETTING], settings[FEEDBACK_TOKEN_SETTING], api_url=api_url
+    )
+
+
 def build_web_app(
     cache_path: Path | None = None,
     url_template: str | None = None,
@@ -105,11 +125,7 @@ def build_web_app(
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     list_visible_passes = build_list_visible_passes_from_celestrak(cache_path, url_template)
     # « Ce soir » se resert par quarts d'heure ; l'identification calcule au moment signalé.
-    send_feedback = build_send_feedback(
-        os.environ.get("LA_HAUT_FEEDBACK_REPO"),
-        os.environ.get("LA_HAUT_FEEDBACK_TOKEN"),
-        api_url=feedback_api_url,
-    )
+    send_feedback = _send_feedback_from_environment(feedback_api_url)
     return create_app(
         ListVisiblePassesBySlot(list_visible_passes),
         _identify_sighting(list_visible_passes),
