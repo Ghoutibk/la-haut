@@ -7,7 +7,6 @@ from la_haut.application.identify_sighting import IdentifySighting
 from la_haut.application.identify_sighting_with_planets import IdentifySightingWithPlanets
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from la_haut.application.send_feedback import SendFeedback
-from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
@@ -17,6 +16,7 @@ from tests.support.builders import (
     a_planet_position,
     a_satellite,
     a_track,
+    an_observer_in_paris,
 )
 from tests.support.fakes import (
     FakeFeedbackInbox,
@@ -27,8 +27,9 @@ from tests.support.fakes import (
     UnavailableFeedbackInbox,
     UnavailableSatelliteCatalog,
 )
+from tests.support.fixtures import PARIS_LATITUDE_DEG, PARIS_LONGITUDE_DEG
 
-PARIS = {"latitude": 48.8566, "longitude": 2.3522}
+PARIS = {"latitude": PARIS_LATITUDE_DEG, "longitude": PARIS_LONGITUDE_DEG}
 WEST = {"azimuth_deg": 270.0}
 
 
@@ -62,7 +63,7 @@ def test_tonight_searches_the_next_twelve_hours_by_default():
     a_client({"ISS (ZARYA)": []}, tracker=tracker).get("/api/passes", params=PARIS)
 
     [(_, observer, window)] = tracker.requests
-    assert observer == Observer(latitude_deg=48.8566, longitude_deg=2.3522)
+    assert observer == an_observer_in_paris()
     assert window == TimeWindow(DEFAULT_INSTANT, DEFAULT_INSTANT + timedelta(hours=12))
 
 
@@ -71,8 +72,8 @@ def test_tonight_searches_the_next_twelve_hours_by_default():
     [
         {**PARIS, "hours": 0},
         {**PARIS, "hours": 49},
-        {"latitude": 91, "longitude": 2.3522},
-        {"latitude": 48.8566},
+        {**PARIS, "latitude": 91},
+        {"latitude": PARIS_LATITUDE_DEG},
     ],
 )
 def test_tonight_rejects_an_impossible_request(params):
