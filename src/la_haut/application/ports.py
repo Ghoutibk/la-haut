@@ -57,6 +57,13 @@ class VisiblePassesListing(Protocol):
     def execute(self, observer: Observer, window: TimeWindow) -> list[VisiblePass]: ...
 
 
+class SatelliteIdentification(Protocol):
+    """Les passages de satellites qui collent au signalement, du plus au moins probable : ce
+    qu'attend l'identification qui y ajoute les planètes."""
+
+    def execute(self, observer: Observer, sighting: Sighting) -> list[VisiblePass]: ...
+
+
 class SightingIdentification(Protocol):
     """Ce que l'interface attend de « c'était quoi, ça ? », planètes comprises ou non."""
 

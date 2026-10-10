@@ -1,5 +1,8 @@
-from la_haut.application.identify_sighting import IdentifySighting
-from la_haut.application.ports import CatalogUnavailableError, PlanetLocator
+from la_haut.application.ports import (
+    CatalogUnavailableError,
+    PlanetLocator,
+    SatelliteIdentification,
+)
 from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet
@@ -14,7 +17,7 @@ class IdentifySightingWithPlanets:
     Sans catalogue de satellites, les planètes répondent quand même, et l'identification le dit.
     """
 
-    def __init__(self, identify_sighting: IdentifySighting, planets: PlanetLocator) -> None:
+    def __init__(self, identify_sighting: SatelliteIdentification, planets: PlanetLocator) -> None:
         self._identify_sighting = identify_sighting
         self._planets = planets
 
