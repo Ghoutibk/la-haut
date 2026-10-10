@@ -36,19 +36,32 @@ def a_private_feedback_inbox(monkeypatch):
     monkeypatch.setenv(FEEDBACK_TOKEN_SETTING, "jeton-de-test")
 
 
+def send(site, kind, message, contact=None):
+    """L'avis tel que la page l'envoie : sa nature, le message et l'e-mail facultatif."""
+    return site.post("/api/feedback", json={"kind": kind, "message": message, "contact": contact})
+
+
 @when(
     parsers.parse("j'envoie le problème « {message} » avec mon e-mail {contact}"),
     target_fixture="answer",
 )
 def send_a_problem(site, message, contact):
-    return site.post(
-        "/api/feedback", json={"kind": "problem", "message": message, "contact": contact}
-    )
+    return send(site, "problem", message, contact)
+
+
+@when("j'envoie un problème sans message", target_fixture="answer")
+def send_a_problem_without_message(site):
+    return send(site, "problem", "")
+
+
+@when(parsers.parse("j'envoie un problème de {length:d} caractères"), target_fixture="answer")
+def send_a_long_problem(site, length):
+    return send(site, "problem", "a" * length)
 
 
 @when(parsers.parse("j'envoie l'idée « {message} »"), target_fixture="answer")
 def send_an_idea(site, message):
-    return site.post("/api/feedback", json={"kind": "idea", "message": message})
+    return send(site, "idea", message)
 
 
 @then(
@@ -75,3 +88,14 @@ def an_issue_with_the_message_only(github, answer, label):
     assert issue["labels"] == [label]
     assert sent["message"] in issue["body"]
     assert "@" not in issue["body"]
+
+
+@then(parsers.parse("mon avis est refusé : « {reason} »"))
+def my_feedback_is_refused(answer, reason):
+    assert answer.is_client_error
+    assert answer.json()["detail"] == reason
+
+
+@then("aucun ticket n'arrive dans la boîte à avis")
+def no_issue_arrives(github):
+    assert github.issues == []
