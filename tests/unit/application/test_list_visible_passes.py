@@ -64,3 +64,11 @@ def test_starlinks_of_one_launch_on_the_same_path_are_announced_as_one_train():
     )
 
     assert (train.is_starlink_train, train.train_size, train.docked_with) == (True, 3, ())
+
+
+def test_each_pass_keeps_the_norad_number_of_its_satellite():
+    iss = a_satellite()
+
+    [visible_pass] = list_visible_passes([iss], {iss.name: a_track({}, {})})
+
+    assert visible_pass.norad_id == iss.norad_id
