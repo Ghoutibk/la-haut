@@ -1,7 +1,5 @@
 """Étapes Gherkin partagées par toutes les fonctionnalités."""
 
-from datetime import time
-
 import pytest
 from pytest_bdd import given, parsers, then, when
 
@@ -13,9 +11,8 @@ from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
 from tests.support.french import (
     DIRECTIONS,
     PLANETS,
-    french_date,
-    paris_instant,
     paris_instant_from_hour_text,
+    paris_instant_on,
 )
 
 
@@ -64,7 +61,7 @@ def search_visible_passes(observer, list_visible_passes, start, end):
 )
 def report_a_sighting(observer, identify_sighting, day, clock, direction):
     sighting = Sighting(
-        at=paris_instant(french_date(day), time.fromisoformat(clock)),
+        at=paris_instant_on(day, clock),
         direction=DIRECTIONS[direction],
     )
     return identify_sighting.execute(observer, sighting)

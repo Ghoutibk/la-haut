@@ -1,9 +1,9 @@
-from datetime import time, timedelta
+from datetime import timedelta
 
 from pytest_bdd import given, parsers, scenarios, then
 
 from tests.support.fixtures import STARLINK_TRAIN
-from tests.support.french import french_date, paris_instant
+from tests.support.french import paris_instant_on
 
 scenarios("trains_starlink.feature")
 
@@ -29,8 +29,8 @@ def a_starlink_train_catalog(tmp_path):
 def one_train_pass(passes, size, day, start, end):
     [train] = passes
     assert (train.is_starlink_train, train.train_size) == (True, size)
-    expected_start = paris_instant(french_date(day), time.fromisoformat(start))
-    expected_end = paris_instant(french_date(day), time.fromisoformat(end))
+    expected_start = paris_instant_on(day, start)
+    expected_end = paris_instant_on(day, end)
     assert abs(train.starts_at - expected_start) <= TOLERANCE
     assert abs(train.ends_at - expected_end) <= TOLERANCE
 

@@ -1,4 +1,4 @@
-from datetime import time, timedelta
+from datetime import timedelta
 
 import pytest
 from pytest_bdd import given, parsers, scenarios, then
@@ -6,7 +6,7 @@ from pytest_bdd import given, parsers, scenarios, then
 from la_haut.composition import build_list_visible_passes_from_celestrak
 from tests.support.fake_celestrak import FakeCelestrak
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
-from tests.support.french import french_date, paris_instant
+from tests.support.french import paris_instant_on
 
 scenarios("trains_starlink_reels.feature")
 
@@ -35,8 +35,8 @@ def celestrak_publishes_its_catalogs_of_october_6(celestrak, tmp_path):
     parsers.parse("je vois un train Starlink de {size:d} satellites, le {day} de {start} à {end}")
 )
 def a_train_among_the_passes(passes, size, day, start, end):
-    expected_start = paris_instant(french_date(day), time.fromisoformat(start))
-    expected_end = paris_instant(french_date(day), time.fromisoformat(end))
+    expected_start = paris_instant_on(day, start)
+    expected_end = paris_instant_on(day, end)
     assert any(
         visible_pass.train_size == size
         and abs(visible_pass.starts_at - expected_start) <= TOLERANCE

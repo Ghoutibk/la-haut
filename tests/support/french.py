@@ -56,6 +56,11 @@ def paris_instant_from_hour_text(text: str) -> datetime:
     return paris_instant(french_date(match["day"]), time(int(match["hour"])))
 
 
+def paris_instant_on(day: str, clock: str) -> datetime:
+    """« 4 juillet 2018 », « 04:56 » → instant à Paris."""
+    return paris_instant(french_date(day), time.fromisoformat(clock))
+
+
 PLANETS = {
     "Vénus": Planet.VENUS,
     "Mars": Planet.MARS,
