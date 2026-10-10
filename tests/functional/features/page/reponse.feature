@@ -65,6 +65,7 @@ Fonctionnalité: Lire sur la page ce qu'était la lumière
   Scénario: Ni satellite ni planète
     Quand je signale une lumière vue à l'instant, direction « Nord »
     Alors la réponse est « Ni satellite ni planète », sous « Rien de connu »
+    Et la réponse « Ni satellite ni planète » est annoncée sans m'interrompre
     Et la réponse dit « Aucun satellite suivi ni aucune planète brillante n'était dans cette direction à ce moment. C'était peut-être un avion ou une étoile. »
     Et la réponse propose « Ce n'était pas ça ? Dis-le-nous »
 

@@ -39,6 +39,7 @@ Fonctionnalité: Écrire à l'auteur depuis la page
     Et j'envoie mon message
     Alors la fenêtre dit « Bien reçu »
     Et la fenêtre s'intitule désormais « Merci ! »
+    Et la réponse « Merci ! » est annoncée sans m'interrompre
     Et la fenêtre dit « Ton message est arrivé chez l'auteur du site. Si tu as laissé ton e-mail, il pourra te répondre. »
     Et l'auteur reçoit un problème : « La boussole ne bouge pas sur mon Android », avec l'e-mail claire@example.org
 
