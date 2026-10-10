@@ -6,8 +6,8 @@ Le site tourne sur un port libre de localhost, branché sur les doublures de `te
 from datetime import datetime
 
 import pytest
-from playwright.sync_api import sync_playwright
-from pytest_bdd import parsers, when
+from playwright.sync_api import expect, sync_playwright
+from pytest_bdd import parsers, then, when
 
 from la_haut.application.send_feedback import SendFeedback
 from la_haut.interface.http.app import create_app
@@ -22,6 +22,18 @@ from tests.support.visit import Visit
 
 # Un lundi soir d'octobre à Paris : l'heure du visiteur et du site, sauf mention contraire.
 MONDAY_EVENING = datetime(2026, 10, 5, 21, 30, tzinfo=PARIS_TIME)
+MAIN_NAVIGATION = "Navigation principale"
+
+
+def a_view(page, title: str):
+    """Une vue de la page, nommée par son titre."""
+    return page.get_by_role("region", name=title, exact=True)
+
+
+def a_tab(page, name: str):
+    return page.get_by_role("navigation", name=MAIN_NAVIGATION).get_by_role(
+        "link", name=name, exact=True
+    )
 
 
 @pytest.fixture(scope="session")
@@ -99,3 +111,28 @@ def open_la_haut(opens):
 @when(parsers.parse("j'ouvre l'adresse {address}"), target_fixture="page")
 def open_an_address(opens, address):
     return opens("/" + address)
+
+
+@when(parsers.parse("je touche l'onglet « {tab} »"))
+def touch_a_tab(page, tab):
+    a_tab(page, tab).click()
+
+
+@then(parsers.parse("je vois la vue « {title} »"))
+def the_view_is_shown(page, title):
+    expect(a_view(page, title)).to_be_visible()
+
+
+@then(parsers.parse("la vue « {title} » est cachée"))
+def the_view_is_hidden(page, title):
+    expect(a_view(page, title)).to_be_hidden()
+
+
+@then(parsers.parse("l'onglet « {tab} » est l'onglet actif"))
+def the_tab_is_the_current_one(page, tab):
+    expect(a_tab(page, tab)).to_have_attribute("aria-current", "page")
+
+
+@then(parsers.parse("l'onglet « {tab} » ne l'est pas"))
+def the_tab_is_not_the_current_one(page, tab):
+    expect(a_tab(page, tab)).not_to_have_attribute("aria-current", "page")
