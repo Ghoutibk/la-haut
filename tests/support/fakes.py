@@ -8,9 +8,11 @@ from la_haut.application.ports import (
     FeedbackUnavailableError,
 )
 from la_haut.domain.feedback import Feedback
+from la_haut.domain.identification import Identification
 from la_haut.domain.observer import Observer
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.satellite import Satellite
+from la_haut.domain.sighting import Sighting
 from la_haut.domain.sky_sample import SkySample
 from la_haut.domain.time_window import TimeWindow
 from la_haut.domain.visible_pass import VisiblePass
@@ -55,6 +57,19 @@ class FakeVisiblePassesListing:
     def execute(self, observer: Observer, window: TimeWindow) -> list[VisiblePass]:
         self.requests.append((observer, window))
         return list(self._passes)
+
+
+class FakeSightingIdentification:
+    """Répond toujours l'identification préparée (rien de connu par défaut) ; retient chaque
+    signalement."""
+
+    def __init__(self, identification: Identification | None = None) -> None:
+        self.identification = identification or Identification(candidates=())
+        self.requests: list[tuple[Observer, Sighting]] = []
+
+    def execute(self, observer: Observer, sighting: Sighting) -> Identification:
+        self.requests.append((observer, sighting))
+        return self.identification
 
 
 class FakePlanetLocator:
