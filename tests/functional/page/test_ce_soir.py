@@ -5,16 +5,15 @@ from pytest_bdd import given, parsers, scenarios, then
 
 from la_haut.application.list_visible_passes import ListVisiblePasses
 from tests.support.fakes import FakeSkyTracker, UnavailableSatelliteCatalog
-from tests.support.visit import a_view
+from tests.support.visit import TONIGHT_VIEW, a_view
 
 scenarios("page/ce_soir.feature")
 
-TONIGHT = "Au-dessus de toi"
 WEEKDAYS = re.compile("lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche")
 
 
 def _pass_cards(page):
-    return a_view(page, TONIGHT).get_by_role("listitem")
+    return a_view(page, TONIGHT_VIEW).get_by_role("listitem")
 
 
 @given("le catalogue des satellites est indisponible", target_fixture="visible_passes_listing")

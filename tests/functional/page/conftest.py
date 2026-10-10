@@ -4,6 +4,7 @@ Le site tourne sur un port libre de localhost, branché sur les doublures de `te
 """
 
 import re
+from dataclasses import replace
 from datetime import date, datetime, time, timedelta
 
 import pytest
@@ -14,16 +15,24 @@ from la_haut.application.send_feedback import SendFeedback
 from la_haut.domain.observer import Observer
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
-from tests.support.builders import a_visible_pass, an_observer_in_paris
+from tests.support.builders import a_planet_position, a_visible_pass, an_observer_in_paris
 from tests.support.fakes import (
     FakeFeedbackInbox,
     FakeSightingIdentification,
     FakeVisiblePassesListing,
 )
 from tests.support.fixtures import STARLINK_TRAIN
-from tests.support.french import DIRECTIONS, PARIS_TIME, french_date, paris_instant
+from tests.support.french import DIRECTIONS, PARIS_TIME, PLANETS, french_date, paris_instant
 from tests.support.local_site import LocalSite, eventually
-from tests.support.visit import UNANSWERED_POSITION, Visit, a_group, a_tab, a_view
+from tests.support.visit import (
+    UNANSWERED_POSITION,
+    Visit,
+    a_group,
+    a_tab,
+    a_view,
+    ask_to_identify,
+    choose_the_direction,
+)
 
 # Un lundi soir d'octobre à Paris : l'heure du visiteur et du site, sauf mention contraire.
 MONDAY_EVENING = datetime(2026, 10, 5, 21, 30, tzinfo=PARIS_TIME)
@@ -222,6 +231,38 @@ def la_haut_announces_these_passes(datatable):
     )
 
 
+@given("Là-haut y reconnaît ces passages :")
+def la_haut_recognizes_these_passes(sighting_identification, visit, datatable):
+    passes = tuple(a_pass_from(row, visit.now.date()) for row in rows_of(datatable))
+    identification = sighting_identification.identification
+    sighting_identification.identification = replace(
+        identification, candidates=identification.candidates + passes
+    )
+
+
+@given("Là-haut y reconnaît ces planètes :")
+def la_haut_recognizes_these_planets(sighting_identification, datatable):
+    planets = tuple(
+        a_planet_position(
+            planet=PLANETS[row["planète"]],
+            azimuth_deg=DIRECTIONS[row["direction"]].azimuth_deg,
+            elevation_deg=float(row["hauteur"]),
+        )
+        for row in rows_of(datatable)
+    )
+    identification = sighting_identification.identification
+    sighting_identification.identification = replace(
+        identification, candidates=identification.candidates + planets
+    )
+
+
+@given("Là-haut n'a pas pu vérifier les satellites")
+def la_haut_could_not_check_the_satellites(sighting_identification):
+    sighting_identification.identification = replace(
+        sighting_identification.identification, satellites_checked=False
+    )
+
+
 @given(parsers.parse("Là-haut met du temps à {action}"))
 def la_haut_takes_its_time(site, action):
     site.holds(API_PATHS[action])
@@ -239,14 +280,12 @@ def la_haut_answers_at_last(site):
 
 @when(parsers.parse("je choisis la direction « {direction} »"))
 def i_choose_the_direction(page, direction):
-    a_group(page, "Dans quelle direction ?").get_by_role(
-        "button", name=direction, exact=True
-    ).click()
+    choose_the_direction(page, direction)
 
 
 @when("je demande à identifier ma lumière")
 def i_ask_to_identify_my_light(page):
-    page.get_by_role("button", name="Identifier", exact=True).click()
+    ask_to_identify(page)
 
 
 @then(parsers.parse("seul « {choice} » est choisi parmi « {legend} »"))

@@ -11,11 +11,10 @@ from tests.support.builders import an_observer_in_paris
 from tests.support.fakes import FakeSkyTracker, UnavailableSatelliteCatalog
 from tests.support.french import DIRECTIONS, french_date, paris_instant
 from tests.support.local_site import eventually
-from tests.support.visit import a_group, a_view
+from tests.support.visit import SIGHTING_VIEW, a_group, a_view
 
 scenarios("page/signalement.feature")
 
-SIGHTING_VIEW = "Tu as vu une lumière bouger dans le ciel ?"
 COMPASS_CELL = re.compile(r"(?P<text>\S+) \((?P<name>[^)]+)\)")
 # Au pixel près : les cases d'une même ligne ou d'une même colonne sont alignées.
 ALIGNMENT_PX = 1

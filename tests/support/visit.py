@@ -11,6 +11,8 @@ from playwright.sync_api import Browser, BrowserContext, Page, Response, Route
 
 PHONE_SCREEN = {"width": 390, "height": 844}
 MAIN_NAVIGATION = "Navigation principale"
+TONIGHT_VIEW = "Au-dessus de toi"
+SIGHTING_VIEW = "Tu as vu une lumière bouger dans le ciel ?"
 
 
 @dataclass(frozen=True)
@@ -182,3 +184,13 @@ def a_tab(page: Page, name: str):
 def a_group(page: Page, legend: str):
     """Un groupe de choix, nommé par sa légende."""
     return page.get_by_role("group", name=legend, exact=True)
+
+
+def choose_the_direction(page: Page, direction: str) -> None:
+    a_group(page, "Dans quelle direction ?").get_by_role(
+        "button", name=direction, exact=True
+    ).click()
+
+
+def ask_to_identify(page: Page) -> None:
+    page.get_by_role("button", name="Identifier", exact=True).click()
