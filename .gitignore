@@ -9,3 +9,6 @@ dist/
 
 # Catalogues TLE téléchargés (cache local)
 *.tle
+
+# Paquets npm de la page (frontend/node_modules)
+node_modules/
