@@ -23,6 +23,7 @@ from tests.support.fakes import (
     FakePlanetLocator,
     FakeSatelliteCatalog,
     FakeSkyTracker,
+    NotConfiguredFeedbackInbox,
     UnavailableFeedbackInbox,
     UnavailableSatelliteCatalog,
 )
@@ -254,6 +255,13 @@ def test_the_api_says_so_when_the_feedback_inbox_is_unavailable():
 
     assert response.status_code == 503
     assert "avis" in response.json()["detail"]
+
+
+def test_the_api_tells_apart_a_feedback_inbox_that_is_not_configured():
+    response = a_feedback_client(NotConfiguredFeedbackInbox()).post("/api/feedback", json=A_PROBLEM)
+
+    assert response.status_code == 503
+    assert "pas encore configuré" in response.json()["detail"]
 
 
 def test_the_api_asks_to_wait_when_too_much_feedback_came_in_the_hour():
