@@ -3,7 +3,8 @@
 Le site tourne sur un port libre de localhost, branché sur les doublures de `tests/support`.
 """
 
-from datetime import datetime, timedelta
+import re
+from datetime import date, datetime, time, timedelta
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
@@ -13,19 +14,26 @@ from la_haut.application.send_feedback import SendFeedback
 from la_haut.domain.observer import Observer
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
-from tests.support.builders import an_observer_in_paris
+from tests.support.builders import a_visible_pass, an_observer_in_paris
 from tests.support.fakes import (
     FakeFeedbackInbox,
     FakeSightingIdentification,
     FakeVisiblePassesListing,
 )
-from tests.support.french import PARIS_TIME
+from tests.support.fixtures import STARLINK_TRAIN
+from tests.support.french import DIRECTIONS, PARIS_TIME, french_date, paris_instant
 from tests.support.local_site import LocalSite, eventually
 from tests.support.visit import UNANSWERED_POSITION, Visit
 
 # Un lundi soir d'octobre à Paris : l'heure du visiteur et du site, sauf mention contraire.
 MONDAY_EVENING = datetime(2026, 10, 5, 21, 30, tzinfo=PARIS_TIME)
 MAIN_NAVIGATION = "Navigation principale"
+STARLINK_TRAIN_NAME = re.compile(r"train Starlink de (?P<size>\d+) satellites")
+API_PATHS = {
+    "chercher les passages": "/api/passes",
+    "identifier ma lumière": "/api/identification",
+    "recevoir mon message": "/api/feedback",
+}
 
 
 def a_view(page, title: str):
@@ -65,6 +73,32 @@ def visit(chrome, site):
     visit = Visit(chrome, site.url, now=MONDAY_EVENING)
     yield visit
     visit.ends()
+
+
+def a_pass_from(row: dict[str, str], day: date):
+    """Un passage décrit par une ligne de scénario ; un train Starlink se nomme par sa taille."""
+    starts_at = paris_instant(day, time.fromisoformat(row["début"]))
+    ends_at = paris_instant(day, time.fromisoformat(row["fin"]))
+    if ends_at < starts_at:
+        ends_at += timedelta(days=1)
+    names = [row["satellite"]]
+    train = STARLINK_TRAIN_NAME.fullmatch(row["satellite"])
+    if train:
+        names = [name for name, *_ in STARLINK_TRAIN][: int(train["size"])]
+    return a_visible_pass(
+        satellite_name=names[0],
+        train_followers=tuple(names[1:]),
+        starts_at=starts_at,
+        ends_at=ends_at,
+        appears_in=DIRECTIONS[row["depuis"]],
+        vanishes_in=DIRECTIONS[row["vers"]],
+        max_elevation_deg=float(row["hauteur"]),
+    )
+
+
+def rows_of(datatable) -> list[dict[str, str]]:
+    header, *rows = datatable
+    return [dict(zip(header, row, strict=True)) for row in rows]
 
 
 @pytest.fixture
@@ -181,3 +215,30 @@ def passes_are_searched_there(visible_passes_listing, visit, hours, latitude, lo
 )
 def passes_are_searched_over_paris(visible_passes_listing, visit, hours):
     _passes_were_searched_over(visible_passes_listing, an_observer_in_paris(), visit, hours)
+
+
+@given(parsers.parse("nous sommes le {day} à {clock}"))
+def it_is(visit, day, clock):
+    visit.now = paris_instant(french_date(day), time.fromisoformat(clock))
+
+
+@given("Là-haut annonce ces passages :", target_fixture="visible_passes_listing")
+def la_haut_announces_these_passes(datatable):
+    return FakeVisiblePassesListing(
+        [a_pass_from(row, french_date(row["jour"])) for row in rows_of(datatable)]
+    )
+
+
+@given(parsers.parse("Là-haut met du temps à {action}"))
+def la_haut_takes_its_time(site, action):
+    site.holds(API_PATHS[action])
+
+
+@given("l'hébergeur de Là-haut est en panne")
+def the_host_is_down(site):
+    site.goes_down_on("/api/")
+
+
+@when("Là-haut répond enfin")
+def la_haut_answers_at_last(site):
+    site.answers()
