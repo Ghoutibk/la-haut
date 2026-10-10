@@ -1,6 +1,7 @@
 import pytest
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.famous_satellites import HUBBLE_NORAD_ID, ISS_NORAD_ID, TIANGONG_NORAD_ID
 from la_haut.domain.identification import Identification
 from la_haut.domain.planet import Planet
 from la_haut.interface.http.presenters import (
@@ -14,6 +15,7 @@ from tests.support.builders import (
     a_planet_position,
     a_visible_pass,
 )
+from tests.support.fixtures import HUBBLE_NAME, ISS_NAME, TIANGONG_NAME
 
 
 def test_a_pass_is_presented_with_its_times_in_iso_format():
@@ -57,15 +59,25 @@ def test_every_compass_point_has_a_french_name():
 
 
 @pytest.mark.parametrize(
-    ("catalog_name", "public_name"),
+    ("catalog_name", "norad_id", "public_name"),
     [
-        ("ISS (ZARYA)", "Station spatiale internationale"),
-        ("CSS (TIANHE)", "Station spatiale chinoise Tiangong"),
-        ("HST", "Télescope spatial Hubble"),
+        (ISS_NAME, ISS_NORAD_ID, "Station spatiale internationale"),
+        (TIANGONG_NAME, TIANGONG_NORAD_ID, "Station spatiale chinoise Tiangong"),
+        (HUBBLE_NAME, HUBBLE_NORAD_ID, "Télescope spatial Hubble"),
     ],
 )
-def test_famous_satellites_are_presented_under_their_public_name(catalog_name, public_name):
-    assert present_pass(a_visible_pass(satellite_name=catalog_name))["name"] == public_name
+def test_famous_satellites_are_presented_under_their_public_name(
+    catalog_name, norad_id, public_name
+):
+    famous = a_visible_pass(satellite_name=catalog_name, norad_id=norad_id)
+
+    assert present_pass(famous)["name"] == public_name
+
+
+def test_a_famous_satellite_renamed_by_celestrak_keeps_its_public_name():
+    renamed = a_visible_pass(satellite_name="TIANHE", norad_id=TIANGONG_NORAD_ID)
+
+    assert present_pass(renamed)["name"] == "Station spatiale chinoise Tiangong"
 
 
 def test_another_satellite_keeps_its_catalog_name():

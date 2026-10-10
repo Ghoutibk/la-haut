@@ -1,6 +1,7 @@
 """Traduction des objets du domaine en JSON pour la page web."""
 
 from la_haut.domain.compass_point import CompassPoint
+from la_haut.domain.famous_satellites import HUBBLE_NORAD_ID, ISS_NORAD_ID, TIANGONG_NORAD_ID
 from la_haut.domain.identification import Candidate, Identification
 from la_haut.domain.planet import Planet, PlanetPosition
 from la_haut.domain.visible_pass import VisiblePass
@@ -16,10 +17,11 @@ FRENCH_COMPASS_NAMES = {
     CompassPoint.NORTH_WEST: "nord-ouest",
 }
 
+# Reconnus à leur numéro NORAD, comme dans le domaine : un nom CelesTrak peut changer.
 PUBLIC_NAMES = {
-    "ISS (ZARYA)": "Station spatiale internationale",
-    "CSS (TIANHE)": "Station spatiale chinoise Tiangong",
-    "HST": "Télescope spatial Hubble",
+    ISS_NORAD_ID: "Station spatiale internationale",
+    TIANGONG_NORAD_ID: "Station spatiale chinoise Tiangong",
+    HUBBLE_NORAD_ID: "Télescope spatial Hubble",
 }
 
 FRENCH_PLANET_NAMES = {
@@ -37,7 +39,7 @@ def _present_direction(point: CompassPoint) -> dict[str, str]:
 def _public_name(visible_pass: VisiblePass) -> str:
     if visible_pass.is_starlink_train:
         return f"Train Starlink ({visible_pass.train_size} satellites)"
-    return PUBLIC_NAMES.get(visible_pass.satellite_name, visible_pass.satellite_name)
+    return PUBLIC_NAMES.get(visible_pass.norad_id, visible_pass.satellite_name)
 
 
 def present_pass(visible_pass: VisiblePass) -> dict:
