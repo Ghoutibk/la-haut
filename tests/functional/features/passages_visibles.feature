@@ -11,22 +11,22 @@ Fonctionnalité: Voir les passages visibles au-dessus de chez moi
   Scénario: L'ISS se montre juste avant l'aube
     Quand je cherche les passages visibles du 4 juillet 2018 à 3 h au 4 juillet 2018 à 6 h
     Alors je vois ces passages :
-      | satellite   | jour           | début | fin   | depuis | vers |
-      | ISS (ZARYA) | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
+      | nom                             | jour           | début | fin   | depuis | vers |
+      | Station spatiale internationale | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
 
   Scénario: Les passages de plusieurs nuits sont annoncés du plus proche au plus lointain
     Quand je cherche les passages visibles du 4 juillet 2018 à 0 h au 7 juillet 2018 à 0 h
     Alors je vois ces passages :
-      | satellite   | jour           | début | fin   | depuis | vers |
-      | ISS (ZARYA) | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
-      | ISS (ZARYA) | 6 juillet 2018 | 04:45 | 04:51 | sud    | est  |
+      | nom                             | jour           | début | fin   | depuis | vers |
+      | Station spatiale internationale | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
+      | Station spatiale internationale | 6 juillet 2018 | 04:45 | 04:51 | sud    | est  |
 
   Scénario: Un vaisseau amarré à l'ISS ne crée pas de doublon
     Étant donné un vaisseau amarré à l'ISS dans le catalogue
     Quand je cherche les passages visibles du 4 juillet 2018 à 3 h au 4 juillet 2018 à 6 h
     Alors je vois ces passages :
-      | satellite   | jour           | début | fin   | depuis | vers |
-      | ISS (ZARYA) | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
+      | nom                             | jour           | début | fin   | depuis | vers |
+      | Station spatiale internationale | 4 juillet 2018 | 04:54 | 04:58 | sud    | est  |
     Et le vaisseau amarré est signalé avec l'ISS
 
   Plan du scénario: Rien n'est annoncé quand le ciel est trop clair pour voir l'ISS

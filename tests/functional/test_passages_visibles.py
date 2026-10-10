@@ -1,5 +1,6 @@
 from pytest_bdd import given, scenarios, then
 
+from la_haut.interface.http.presenters import present_pass
 from tests.support.fixtures import (
     DOCKED_VEHICLE_NAME,
     DOCKED_VEHICLE_TLE_LINE_1,
@@ -35,7 +36,7 @@ def these_passes_are_announced(passes, datatable):
 
     assert len(passes) == len(expected_passes)
     for visible_pass, expected in zip(passes, expected_passes, strict=True):
-        assert visible_pass.satellite_name == expected["satellite"]
+        assert present_pass(visible_pass)["name"] == expected["nom"]
         assert is_about(visible_pass.starts_at, expected["jour"], expected["début"])
         assert is_about(visible_pass.ends_at, expected["jour"], expected["fin"])
         assert visible_pass.appears_in == DIRECTIONS[expected["depuis"]]
