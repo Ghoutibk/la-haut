@@ -26,6 +26,7 @@ SOURCE_FAILURES = {
         lambda celestrak: celestrak.publishes_cut_short(omm_csv_from_tle(ISS)),
         "MEAN_ANOMALY",
     ),
+    "answer cut off": (lambda celestrak: celestrak.cuts_off_its_answers(), "IncompleteRead"),
 }
 
 

@@ -16,6 +16,7 @@ class FakeCelestrak:
         self.body = ""
         self.bodies_by_group: dict[str, str] = {}
         self.status = 200
+        self.cuts_off = False
         self.requests: list[dict[str, list[str]]] = []
         self.paths: list[str] = []
         fake = self
@@ -32,7 +33,8 @@ class FakeCelestrak:
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
-                self.wfile.write(payload)
+                # Interrompue, la réponse s'arrête à la moitié de la longueur annoncée.
+                self.wfile.write(payload[: len(payload) // 2] if fake.cuts_off else payload)
 
             def log_message(self, *args) -> None:
                 pass
@@ -61,6 +63,7 @@ class FakeCelestrak:
         else:
             self.bodies_by_group[group] = body
         self.status = 200
+        self.cuts_off = False
 
     def publishes_as_omm(self, *entries: tuple[str, str, str], group: str | None = None) -> None:
         """Publie ces TLE (nom, ligne 1, ligne 2), convertis en catalogue OMM au format CSV."""
@@ -77,6 +80,10 @@ class FakeCelestrak:
     def publishes_cut_short(self, catalog: str) -> None:
         """Publie ce catalogue coupé entre deux colonnes de son premier satellite."""
         self.publishes(*cut_short(catalog).splitlines())
+
+    def cuts_off_its_answers(self) -> None:
+        """Annonce chaque catalogue en entier, n'en envoie que la moitié et raccroche."""
+        self.cuts_off = True
 
     def fails_with(self, status: int) -> None:
         self.status = status
