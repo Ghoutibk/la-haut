@@ -1,6 +1,9 @@
 """Étapes Gherkin partagées par toutes les fonctionnalités."""
 
+from datetime import datetime
+
 import pytest
+from fastapi.testclient import TestClient
 from pytest_bdd import given, parsers, then, when
 
 from la_haut.composition import (
@@ -11,6 +14,7 @@ from la_haut.composition import (
 )
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
+from la_haut.interface.http.app import create_app
 from tests.support.builders import an_observer_in_paris
 from tests.support.fake_celestrak import FakeCelestrak
 from tests.support.fixtures import (
@@ -23,6 +27,7 @@ from tests.support.fixtures import (
 from tests.support.french import (
     DIRECTIONS,
     PLANETS,
+    is_about,
     paris_instant_from_hour_text,
     paris_instant_on,
 )
@@ -110,3 +115,25 @@ def report_a_sighting(observer, identify_sighting, day, clock, direction):
 @then(parsers.parse("la lumière était la planète {planet_name}"))
 def it_was_the_planet(identification, planet_name):
     assert getattr(identification.candidates[0], "planet", None) == PLANETS[planet_name]
+
+
+@when(parsers.parse("j'ouvre « Ce soir » le {moment}"), target_fixture="tonight")
+def open_tonight(observer, celestrak, cache_path, moment):
+    """La page « Ce soir » du site branché sur CelesTrak, telle qu'elle s'ouvre à ce moment-là."""
+    site = create_app(
+        build_list_visible_passes_from_celestrak(cache_path, url_template=celestrak.url_template),
+        build_identify_sighting_from_celestrak(cache_path, url_template=celestrak.url_template),
+        clock=lambda: paris_instant_from_hour_text(moment),
+    )
+    where = {"latitude": observer.latitude_deg, "longitude": observer.longitude_deg}
+    return TestClient(site).get("/api/passes", params=where)
+
+
+@then(parsers.parse("« Ce soir » annonce « {name} » le {day} de {start} à {end}"))
+def tonight_announces(tonight, name, day, start, end):
+    assert any(
+        announced["name"] == name
+        and is_about(datetime.fromisoformat(announced["starts_at"]), day, start)
+        and is_about(datetime.fromisoformat(announced["ends_at"]), day, end)
+        for announced in tonight.json()["passes"]
+    )
