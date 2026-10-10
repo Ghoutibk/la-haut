@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 class FakeGitHub:
     def __init__(self) -> None:
         self.status = 201
+        self.talks_nonsense = False
         self.requests: list[dict] = []
         fake = self
 
@@ -21,6 +22,9 @@ class FakeGitHub:
                         "json": json.loads(self.rfile.read(length) or b"null"),
                     }
                 )
+                if fake.talks_nonsense:
+                    self.wfile.write(b"HTTP/1.1 ??? Nonsense\r\n\r\n")
+                    return
                 payload = json.dumps({"number": len(fake.requests)}).encode("utf-8")
                 self.send_response(fake.status)
                 self.send_header("Content-Type", "application/json")
@@ -52,3 +56,7 @@ class FakeGitHub:
 
     def fails_with(self, status: int) -> None:
         self.status = status
+
+    def answers_nonsense(self) -> None:
+        """Répond une ligne d'état illisible au lieu d'une réponse HTTP, puis raccroche."""
+        self.talks_nonsense = True
