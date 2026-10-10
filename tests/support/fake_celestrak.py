@@ -16,6 +16,7 @@ class FakeCelestrak:
         self.body = ""
         self.bodies_by_group: dict[str, str] = {}
         self.status = 200
+        self.statuses_by_group: dict[str, int] = {}
         self.cuts_off = False
         self.requests: list[dict[str, list[str]]] = []
         self.paths: list[str] = []
@@ -29,7 +30,7 @@ class FakeCelestrak:
                 fake.paths.append(url.path)
                 [group] = query.get("GROUP", [PurePosixPath(url.path).stem])
                 payload = fake.bodies_by_group.get(group, fake.body).encode("utf-8")
-                self.send_response(fake.status)
+                self.send_response(fake.statuses_by_group.get(group, fake.status))
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
@@ -85,5 +86,9 @@ class FakeCelestrak:
         """Annonce chaque catalogue en entier, n'en envoie que la moitié et raccroche."""
         self.cuts_off = True
 
-    def fails_with(self, status: int) -> None:
-        self.status = status
+    def fails_with(self, status: int, group: str | None = None) -> None:
+        """Répond cette erreur pour un groupe donné, ou pour tous les groupes sans erreur propre."""
+        if group is None:
+            self.status = status
+        else:
+            self.statuses_by_group[group] = status
