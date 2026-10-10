@@ -3,22 +3,25 @@
 Le site tourne sur un port libre de localhost, branché sur les doublures de `tests/support`.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 from playwright.sync_api import expect, sync_playwright
-from pytest_bdd import parsers, then, when
+from pytest_bdd import given, parsers, then, when
 
 from la_haut.application.send_feedback import SendFeedback
+from la_haut.domain.observer import Observer
+from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
+from tests.support.builders import an_observer_in_paris
 from tests.support.fakes import (
     FakeFeedbackInbox,
     FakeSightingIdentification,
     FakeVisiblePassesListing,
 )
 from tests.support.french import PARIS_TIME
-from tests.support.local_site import LocalSite
-from tests.support.visit import Visit
+from tests.support.local_site import LocalSite, eventually
+from tests.support.visit import UNANSWERED_POSITION, Visit
 
 # Un lundi soir d'octobre à Paris : l'heure du visiteur et du site, sauf mention contraire.
 MONDAY_EVENING = datetime(2026, 10, 5, 21, 30, tzinfo=PARIS_TIME)
@@ -136,3 +139,45 @@ def the_tab_is_the_current_one(page, tab):
 @then(parsers.parse("l'onglet « {tab} » ne l'est pas"))
 def the_tab_is_not_the_current_one(page, tab):
     expect(a_tab(page, tab)).not_to_have_attribute("aria-current", "page")
+
+
+@given("je ne réponds pas à la demande de position")
+def i_do_not_answer_the_position_request(visit):
+    visit.position = UNANSWERED_POSITION
+
+
+@when(parsers.parse("{seconds:d} secondes passent"))
+def seconds_go_by(page, seconds):
+    page.clock.run_for(seconds * 1000)
+
+
+@then(parsers.parse("la vue « {title} » annonce « {status} »"))
+def the_view_announces(page, title, status):
+    expect(a_view(page, title).get_by_role("status")).to_have_text(status)
+
+
+def _passes_were_searched_over(listing, observer, visit, hours):
+    def searched():
+        assert listing.requests == [
+            (observer, TimeWindow(visit.now, visit.now + timedelta(hours=hours)))
+        ]
+
+    eventually(searched)
+
+
+@then(
+    parsers.parse(
+        "Là-haut cherche les passages des {hours:d} prochaines heures "
+        "en {latitude:g}, {longitude:g}"
+    )
+)
+def passes_are_searched_there(visible_passes_listing, visit, hours, latitude, longitude):
+    observer = Observer(latitude_deg=latitude, longitude_deg=longitude)
+    _passes_were_searched_over(visible_passes_listing, observer, visit, hours)
+
+
+@then(
+    parsers.parse("Là-haut cherche les passages des {hours:d} prochaines heures au-dessus de Paris")
+)
+def passes_are_searched_over_paris(visible_passes_listing, visit, hours):
+    _passes_were_searched_over(visible_passes_listing, an_observer_in_paris(), visit, hours)

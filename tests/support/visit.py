@@ -3,6 +3,7 @@
 Le navigateur ne sort jamais de localhost : toute autre requête est bloquée et retenue.
 """
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 
@@ -133,7 +134,9 @@ class Visit:
             **self.device.context_options(),
             **self.position.context_options,
         )
-        self._context.route("**/*", self._stays_on_the_site)
+        # Seules les requêtes qui sortent du site passent par ici : celles du site restent dans
+        # le navigateur, même quand le test attend sans piloter Playwright.
+        self._context.route(re.compile(f"^(?!{re.escape(self._site_url)}/)"), self._blocks)
         for script in (self.device.script, self.position.script):
             if script:
                 self._context.add_init_script(script)
@@ -156,9 +159,6 @@ class Visit:
     def _remembers(self, response: Response) -> None:
         self.responses.append(response)
 
-    def _stays_on_the_site(self, route: Route) -> None:
-        if route.request.url.startswith(self._site_url):
-            route.fallback()
-        else:
-            self.blocked_urls.append(route.request.url)
-            route.abort()
+    def _blocks(self, route: Route) -> None:
+        self.blocked_urls.append(route.request.url)
+        route.abort()

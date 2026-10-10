@@ -12,6 +12,8 @@ import time
 import uvicorn
 
 STARTUP_PATIENCE_S = 5.0
+# Le site répond dans un autre fil : ce qu'il a reçu se vérifie avec un peu de patience.
+CHECK_PATIENCE_S = 5.0
 # Au-delà, une réponse retenue part quand même : un scénario oublié ne bloque pas le serveur.
 HOLD_PATIENCE_S = 10.0
 
@@ -95,3 +97,16 @@ async def _bad_gateway(send) -> None:
         }
     )
     await send({"type": "http.response.body", "body": body})
+
+
+def eventually(check) -> None:
+    """Refait la vérification jusqu'à ce qu'elle passe, ou échoue au bout de la patience."""
+    deadline = time.monotonic() + CHECK_PATIENCE_S
+    while True:
+        try:
+            check()
+            return
+        except AssertionError:
+            if time.monotonic() > deadline:
+                raise
+            time.sleep(0.02)
