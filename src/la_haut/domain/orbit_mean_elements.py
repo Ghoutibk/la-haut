@@ -59,9 +59,11 @@ class OrbitMeanElements:
             _check_field(name, value)
 
     @classmethod
-    def from_fields(cls, fields: Mapping[str, str]) -> "OrbitMeanElements":
-        """Garde, d'un message OMM, les seuls éléments orbitaux."""
-        return cls(tuple((name, fields[name]) for name in ELEMENT_FIELDS if name in fields))
+    def from_fields(cls, fields: Mapping[str, str | None]) -> "OrbitMeanElements":
+        """Garde, d'un message OMM, les seuls éléments orbitaux ; un champ sans valeur manque."""
+        return cls(
+            tuple((name, fields[name]) for name in ELEMENT_FIELDS if fields.get(name) is not None)
+        )
 
     def as_fields(self) -> dict[str, str]:
         return dict(self.fields)

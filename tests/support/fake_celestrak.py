@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import PurePosixPath
 from urllib.parse import parse_qs, urlparse
 
-from tests.support.omm import omm_csv_from_tle
+from tests.support.omm import cut_short, omm_csv_from_tle
 
 
 class FakeCelestrak:
@@ -73,6 +73,10 @@ class FakeCelestrak:
             "<html><head><title>Maintenance</title></head>",
             "<body>Back soon.</body></html>",
         )
+
+    def publishes_cut_short(self, catalog: str) -> None:
+        """Publie ce catalogue coupé entre deux colonnes de son premier satellite."""
+        self.publishes(*cut_short(catalog).splitlines())
 
     def fails_with(self, status: int) -> None:
         self.status = status

@@ -22,6 +22,10 @@ THREE_HOURS_S = 3 * 3600
 SOURCE_FAILURES = {
     "error 503": (lambda celestrak: celestrak.fails_with(503), "503"),
     "web page": (lambda celestrak: celestrak.publishes_a_web_page(), "OBJECT_NAME"),
+    "catalog cut short": (
+        lambda celestrak: celestrak.publishes_cut_short(omm_csv_from_tle(ISS)),
+        "MEAN_ANOMALY",
+    ),
 }
 
 
