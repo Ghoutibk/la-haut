@@ -18,12 +18,25 @@ ISS = (ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
 
 THREE_HOURS_S = 3 * 3600
 
+# Chaque façon dont la source des catalogues peut échouer, et la cause qu'en gardent les logs.
+SOURCE_FAILURES = {
+    "error 503": (lambda celestrak: celestrak.fails_with(503), "503"),
+}
+
 
 @pytest.fixture
 def celestrak():
     with FakeCelestrak() as fake:
         fake.publishes_as_omm(ISS)
         yield fake
+
+
+@pytest.fixture(params=list(SOURCE_FAILURES.values()), ids=list(SOURCE_FAILURES))
+def celestrak_failure(celestrak, request):
+    """CelesTrak échoue d'une des façons possibles ; rend la cause attendue dans les logs."""
+    make_it_fail, logged_cause = request.param
+    make_it_fail(celestrak)
+    return logged_cause
 
 
 @pytest.fixture
@@ -73,9 +86,9 @@ def test_a_cache_older_than_two_hours_is_refreshed(celestrak, cache_path):
     assert time.time() - cache_path.stat().st_mtime < 60
 
 
+@pytest.mark.usefixtures("celestrak_failure")
 def test_when_celestrak_fails_the_last_known_catalog_is_used(celestrak, cache_path):
     a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
-    celestrak.fails_with(503)
 
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
@@ -92,15 +105,14 @@ def test_a_response_that_is_not_a_catalog_never_replaces_the_cache(celestrak, ca
     assert cache_path.read_bytes() == omm_csv_from_tle(ISS).encode("utf-8")
 
 
+@pytest.mark.usefixtures("celestrak_failure")
 def test_without_cache_nor_celestrak_the_catalog_is_unavailable(celestrak, cache_path):
-    celestrak.fails_with(503)
-
     with pytest.raises(CatalogUnavailableError):
         a_catalog(celestrak, cache_path).tracked_satellites()
 
 
+@pytest.mark.usefixtures("celestrak_failure")
 def test_after_a_failure_celestrak_is_left_alone_until_the_retry_delay(celestrak, cache_path):
-    celestrak.fails_with(503)
     catalog = a_catalog(celestrak, cache_path)
 
     for _ in range(2):
@@ -110,9 +122,9 @@ def test_after_a_failure_celestrak_is_left_alone_until_the_retry_delay(celestrak
     assert len(celestrak.requests) == 1
 
 
+@pytest.mark.usefixtures("celestrak_failure")
 def test_after_a_failure_the_last_known_catalog_answers_without_asking_again(celestrak, cache_path):
     a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
-    celestrak.fails_with(503)
     catalog = a_catalog(celestrak, cache_path)
 
     catalog.tracked_satellites()
@@ -122,8 +134,8 @@ def test_after_a_failure_the_last_known_catalog_answers_without_asking_again(cel
     assert len(celestrak.requests) == 1
 
 
+@pytest.mark.usefixtures("celestrak_failure")
 def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_path):
-    celestrak.fails_with(503)
     catalog = CelestrakSatelliteCatalog(
         cache_path, url_template=celestrak.url_template, retry_delay=timedelta(0)
     )
@@ -137,13 +149,13 @@ def test_once_the_retry_delay_is_over_celestrak_is_asked_again(celestrak, cache_
     assert len(celestrak.requests) == 2
 
 
-def test_a_failed_download_is_logged_with_its_group_and_its_reason(celestrak, cache_path, caplog):
-    celestrak.fails_with(503)
-
+def test_a_failed_download_is_logged_with_its_group_and_its_reason(
+    celestrak, celestrak_failure, cache_path, caplog
+):
     with caplog.at_level(logging.WARNING), pytest.raises(CatalogUnavailableError):
         a_catalog(celestrak, cache_path).tracked_satellites()
 
     [record] = caplog.records
     assert record.levelno == logging.WARNING
     assert "visual" in record.getMessage()
-    assert "503" in record.getMessage()
+    assert celestrak_failure in record.getMessage()
