@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from pytest_bdd import given, scenarios, then
 
 from tests.support.fixtures import (
@@ -7,11 +5,9 @@ from tests.support.fixtures import (
     DOCKED_VEHICLE_TLE_LINE_1,
     DOCKED_VEHICLE_TLE_LINE_2,
 )
-from tests.support.french import DIRECTIONS, paris_instant_on
+from tests.support.french import DIRECTIONS, is_about
 
 scenarios("passages_visibles.feature")
-
-TOLERANCE = timedelta(minutes=1)
 
 
 @given("un vaisseau amarré à l'ISS dans le catalogue")
@@ -40,9 +36,7 @@ def these_passes_are_announced(passes, datatable):
     assert len(passes) == len(expected_passes)
     for visible_pass, expected in zip(passes, expected_passes, strict=True):
         assert visible_pass.satellite_name == expected["satellite"]
-        expected_start = paris_instant_on(expected["jour"], expected["début"])
-        expected_end = paris_instant_on(expected["jour"], expected["fin"])
-        assert abs(visible_pass.starts_at - expected_start) <= TOLERANCE
-        assert abs(visible_pass.ends_at - expected_end) <= TOLERANCE
+        assert is_about(visible_pass.starts_at, expected["jour"], expected["début"])
+        assert is_about(visible_pass.ends_at, expected["jour"], expected["fin"])
         assert visible_pass.appears_in == DIRECTIONS[expected["depuis"]]
         assert visible_pass.vanishes_in == DIRECTIONS[expected["vers"]]
