@@ -1,12 +1,17 @@
 import pytest
 
 from la_haut.domain.observer import InvalidObserverError, Observer
+from tests.support.fixtures import PARIS_LATITUDE_DEG, PARIS_LONGITUDE_DEG
 
 
 def test_an_observer_stands_at_a_latitude_and_longitude():
-    paris = Observer(latitude_deg=48.8566, longitude_deg=2.3522)
+    paris = Observer(latitude_deg=PARIS_LATITUDE_DEG, longitude_deg=PARIS_LONGITUDE_DEG)
 
-    assert (paris.latitude_deg, paris.longitude_deg, paris.altitude_m) == (48.8566, 2.3522, 0.0)
+    assert (paris.latitude_deg, paris.longitude_deg, paris.altitude_m) == (
+        PARIS_LATITUDE_DEG,
+        PARIS_LONGITUDE_DEG,
+        0.0,
+    )
 
 
 @pytest.mark.parametrize("latitude_deg", [-90.01, 90.01])
