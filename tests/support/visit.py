@@ -10,6 +10,7 @@ from datetime import datetime
 from playwright.sync_api import Browser, BrowserContext, Page, Response, Route
 
 PHONE_SCREEN = {"width": 390, "height": 844}
+MAIN_NAVIGATION = "Navigation principale"
 
 
 @dataclass(frozen=True)
@@ -162,3 +163,22 @@ class Visit:
     def _blocks(self, route: Route) -> None:
         self.blocked_urls.append(route.request.url)
         route.abort()
+
+
+# Ce que l'on cherche sur la page, comme un lecteur d'écran : par rôle et par nom.
+
+
+def a_view(page: Page, title: str):
+    """Une vue de la page, nommée par son titre."""
+    return page.get_by_role("region", name=title, exact=True)
+
+
+def a_tab(page: Page, name: str):
+    return page.get_by_role("navigation", name=MAIN_NAVIGATION).get_by_role(
+        "link", name=name, exact=True
+    )
+
+
+def a_group(page: Page, legend: str):
+    """Un groupe de choix, nommé par sa légende."""
+    return page.get_by_role("group", name=legend, exact=True)

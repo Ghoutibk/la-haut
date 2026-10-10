@@ -23,28 +23,16 @@ from tests.support.fakes import (
 from tests.support.fixtures import STARLINK_TRAIN
 from tests.support.french import DIRECTIONS, PARIS_TIME, french_date, paris_instant
 from tests.support.local_site import LocalSite, eventually
-from tests.support.visit import UNANSWERED_POSITION, Visit
+from tests.support.visit import UNANSWERED_POSITION, Visit, a_group, a_tab, a_view
 
 # Un lundi soir d'octobre à Paris : l'heure du visiteur et du site, sauf mention contraire.
 MONDAY_EVENING = datetime(2026, 10, 5, 21, 30, tzinfo=PARIS_TIME)
-MAIN_NAVIGATION = "Navigation principale"
 STARLINK_TRAIN_NAME = re.compile(r"train Starlink de (?P<size>\d+) satellites")
 API_PATHS = {
     "chercher les passages": "/api/passes",
     "identifier ma lumière": "/api/identification",
     "recevoir mon message": "/api/feedback",
 }
-
-
-def a_view(page, title: str):
-    """Une vue de la page, nommée par son titre."""
-    return page.get_by_role("region", name=title, exact=True)
-
-
-def a_tab(page, name: str):
-    return page.get_by_role("navigation", name=MAIN_NAVIGATION).get_by_role(
-        "link", name=name, exact=True
-    )
 
 
 @pytest.fixture(scope="session")
@@ -185,6 +173,11 @@ def seconds_go_by(page, seconds):
     page.clock.run_for(seconds * 1000)
 
 
+@when(parsers.parse("{minutes:d} minutes passent"))
+def minutes_go_by(page, minutes):
+    page.clock.run_for(minutes * 60 * 1000)
+
+
 @then(parsers.parse("la vue « {title} » annonce « {status} »"))
 def the_view_announces(page, title, status):
     expect(a_view(page, title).get_by_role("status")).to_have_text(status)
@@ -242,3 +235,34 @@ def the_host_is_down(site):
 @when("Là-haut répond enfin")
 def la_haut_answers_at_last(site):
     site.answers()
+
+
+@when(parsers.parse("je choisis la direction « {direction} »"))
+def i_choose_the_direction(page, direction):
+    a_group(page, "Dans quelle direction ?").get_by_role(
+        "button", name=direction, exact=True
+    ).click()
+
+
+@when("je demande à identifier ma lumière")
+def i_ask_to_identify_my_light(page):
+    page.get_by_role("button", name="Identifier", exact=True).click()
+
+
+@then(parsers.parse("seul « {choice} » est choisi parmi « {legend} »"))
+def only_this_choice_is_made(page, choice, legend):
+    chosen = a_group(page, legend).get_by_role("button", pressed=True)
+
+    expect(chosen).to_have_count(1)
+    expect(chosen).to_have_accessible_name(choice)
+
+
+@then(parsers.parse("la vue « {title} » m'alerte : « {message} »"))
+def the_view_alerts(page, title, message):
+    expect(a_view(page, title).get_by_role("alert")).to_have_text(message)
+
+
+@then(parsers.parse("la vue « {title} » ne m'alerte plus"))
+def the_view_no_longer_alerts(page, title):
+    alerts = a_view(page, title).get_by_role("alert").filter(has_text=re.compile(r"\S"))
+    expect(alerts).to_have_count(0)
