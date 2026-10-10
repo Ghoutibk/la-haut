@@ -41,7 +41,7 @@ Fonctionnalité: Dire sur la page quand et où j'ai vu une lumière
       | O (Ouest)       | Toi      | E (Est)       |
       | SO (Sud-ouest)  | S (Sud)  | SE (Sud-est)  |
     Et aucune direction n'est choisie
-    Et la page rappelle « Repère : le Soleil se lève vers l'est et se couche vers l'ouest. »
+    Et la page dit « Repère : le Soleil se lève vers l'est et se couche vers l'ouest. »
 
   Scénario: Une seule direction à la fois, et la choisir efface l'alerte
     Quand j'ouvre l'adresse #cetait-quoi

@@ -13,6 +13,7 @@ from pytest_bdd import given, parsers, then, when
 
 from la_haut.application.send_feedback import SendFeedback
 from la_haut.domain.observer import Observer
+from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
 from tests.support.builders import a_planet_position, a_visible_pass, an_observer_in_paris
@@ -296,6 +297,12 @@ def only_this_choice_is_made(page, choice, legend):
     expect(chosen).to_have_accessible_name(choice)
 
 
+@then("aucune direction n'est choisie")
+def no_direction_is_chosen(page):
+    chosen = a_group(page, "Dans quelle direction ?").get_by_role("button", pressed=True)
+    expect(chosen).to_have_count(0)
+
+
 @then(parsers.parse("la vue « {title} » m'alerte : « {message} »"))
 def the_view_alerts(page, title, message):
     expect(a_view(page, title).get_by_role("alert")).to_have_text(message)
@@ -305,3 +312,58 @@ def the_view_alerts(page, title, message):
 def the_view_no_longer_alerts(page, title):
     alerts = a_view(page, title).get_by_role("alert").filter(has_text=re.compile(r"\S"))
     expect(alerts).to_have_count(0)
+
+
+@when(parsers.parse("je touche « {name} »"))
+def i_touch_the_button(page, name):
+    page.get_by_role("button", name=name, exact=True).click()
+
+
+@then(parsers.parse("je vois le bouton « {name} »"))
+def the_button_is_shown(page, name):
+    expect(page.get_by_role("button", name=name, exact=True)).to_be_visible()
+
+
+@then(parsers.parse("je ne vois pas le bouton « {name} »"))
+def the_button_is_not_shown(page, name):
+    expect(page.get_by_role("button", name=name, exact=True)).to_be_hidden()
+
+
+@then(parsers.parse("la page dit « {text} »"))
+def the_page_says(page, text):
+    expect(page.get_by_text(text, exact=True)).to_be_visible()
+
+
+@then(parsers.parse("la page ne dit pas « {text} »"))
+def the_page_does_not_say(page, text):
+    expect(page.get_by_text(text, exact=True)).to_be_hidden()
+
+
+@then(parsers.parse("le bouton « {name} » indique qu'il travaille"))
+def the_button_is_busy(page, name):
+    expect(page.get_by_role("button", name=name, exact=True)).to_have_attribute("aria-busy", "true")
+
+
+@then(parsers.parse("le bouton « {name} » ne travaille plus"))
+def the_button_is_no_longer_busy(page, name):
+    expect(page.get_by_role("button", name=name, exact=True)).not_to_have_attribute(
+        "aria-busy", "true"
+    )
+
+
+@then(
+    parsers.re(
+        r"Là-haut cherche ce qui était (?:au |à l')(?P<direction>[a-z-]+) "
+        r"le (?P<day>.+) à (?P<clock>[\d:]+), au-dessus de Paris"
+    )
+)
+def la_haut_searches_what_was_there(sighting_identification, direction, day, clock):
+    sighting = Sighting(
+        at=paris_instant(french_date(day), time.fromisoformat(clock)),
+        direction=DIRECTIONS[direction],
+    )
+
+    def searched():
+        assert sighting_identification.requests == [(an_observer_in_paris(), sighting)]
+
+    eventually(searched)
