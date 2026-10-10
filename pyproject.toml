@@ -23,6 +23,8 @@ dev = [
     "ruff>=0.6",
     "pre-commit>=4.0",
     "httpx2>=2.13",
+    # Pilote le Google Chrome de la machine (channel="chrome") : aucun navigateur téléchargé.
+    "playwright>=1.63",
 ]
 
 [tool.setuptools.packages.find]
