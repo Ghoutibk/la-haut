@@ -71,3 +71,11 @@ def test_each_pass_remembers_the_launch_of_its_satellite():
     )
 
     assert visible_pass.launch == "18999"
+
+
+def test_each_pass_remembers_the_norad_number_of_its_satellite():
+    [visible_pass] = detect_visible_passes(
+        "ISS (ZARYA)", a_track({}, {}), NakedEyeVisibility(), norad_id=25544
+    )
+
+    assert visible_pass.norad_id == 25544

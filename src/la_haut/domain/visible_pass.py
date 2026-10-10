@@ -19,6 +19,7 @@ class VisiblePass:
     docked_with: tuple[str, ...] = ()
     path: tuple[SkySample, ...] = ()
     launch: str = ""
+    norad_id: int | None = None
     train_followers: tuple[str, ...] = ()
 
     @property

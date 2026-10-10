@@ -11,16 +11,19 @@ def detect_visible_passes(
     samples: Sequence[SkySample],
     visibility: NakedEyeVisibility,
     launch: str = "",
+    norad_id: int | None = None,
 ) -> list[VisiblePass]:
     """Découpe une trace chronologique en passages visibles consécutifs."""
     passes = []
     for is_visible, run in groupby(samples, key=visibility.allows):
         if is_visible:
-            passes.append(_pass_from(satellite_name, list(run), launch))
+            passes.append(_pass_from(satellite_name, list(run), launch, norad_id))
     return passes
 
 
-def _pass_from(satellite_name: str, run: list[SkySample], launch: str) -> VisiblePass:
+def _pass_from(
+    satellite_name: str, run: list[SkySample], launch: str, norad_id: int | None
+) -> VisiblePass:
     first, last = run[0], run[-1]
     return VisiblePass(
         satellite_name=satellite_name,
@@ -31,4 +34,5 @@ def _pass_from(satellite_name: str, run: list[SkySample], launch: str) -> Visibl
         max_elevation_deg=max(sample.elevation_deg for sample in run),
         path=tuple(run),
         launch=launch,
+        norad_id=norad_id,
     )
