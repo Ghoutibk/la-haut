@@ -1,4 +1,5 @@
 import json
+import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,11 @@ from tests.support.fake_github import FakeGitHub
 scenarios("avis.feature")
 
 FEEDBACK_REPOSITORY = "Ghoutibk/la-haut-avis"
+# Ce que GitHub peut faire d'un avis, au lieu de le prendre.
+GITHUB_FAILURES = {
+    "refuse le jeton": lambda github: github.fails_with(401),
+    "répond n'importe quoi": lambda github: github.answers_nonsense(),
+}
 
 
 @pytest.fixture
@@ -39,6 +45,16 @@ def a_private_feedback_inbox(monkeypatch):
 def send(site, kind, message, contact=None):
     """L'avis tel que la page l'envoie : sa nature, le message et l'e-mail facultatif."""
     return site.post("/api/feedback", json={"kind": kind, "message": message, "contact": contact})
+
+
+@given(parsers.re("GitHub (?P<failure>" + "|".join(map(re.escape, GITHUB_FAILURES)) + ")"))
+def github_does_not_take_the_feedback(github, failure):
+    GITHUB_FAILURES[failure](github)
+
+
+@given("le jeton de la boîte à avis n'est pas encore réglé sur le site")
+def no_token_set_yet(monkeypatch):
+    monkeypatch.delenv(FEEDBACK_TOKEN_SETTING)
 
 
 @given(parsers.parse("{count:d} avis sont déjà arrivés dans l'heure"))
@@ -99,6 +115,12 @@ def an_issue_with_the_message_only(github, answer, label):
 @then(parsers.parse("mon avis est refusé : « {reason} »"))
 def my_feedback_is_refused(answer, reason):
     assert answer.is_client_error
+    assert answer.json()["detail"] == reason
+
+
+@then(parsers.parse("mon avis ne peut pas partir : « {reason} »"))
+def my_feedback_cannot_be_sent(answer, reason):
+    assert answer.is_server_error
     assert answer.json()["detail"] == reason
 
 

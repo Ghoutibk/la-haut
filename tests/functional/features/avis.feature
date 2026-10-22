@@ -35,3 +35,18 @@ Fonctionnalité: Signaler un problème ou proposer une idée
     Quand j'envoie l'idée « Ajouter les passages de la Lune »
     Alors mon avis est refusé : « Beaucoup de messages viennent d'arriver : réessaie dans un moment. »
     Et la boîte à avis n'a reçu que les 20 premiers
+
+  Plan du scénario: Quand GitHub ne prend pas l'avis, le site demande de réessayer plus tard
+    Étant donné que GitHub <panne>
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis ne peut pas partir : « L'envoi des avis est indisponible pour le moment, réessaie plus tard. »
+
+    Exemples:
+      | panne                 |
+      | refuse le jeton       |
+      | répond n'importe quoi |
+
+  Scénario: Tant que son jeton n'est pas réglé, le site dit que l'envoi n'est pas encore possible
+    Étant donné que le jeton de la boîte à avis n'est pas encore réglé sur le site
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis ne peut pas partir : « L'envoi des avis n'est pas encore configuré sur ce site. »
