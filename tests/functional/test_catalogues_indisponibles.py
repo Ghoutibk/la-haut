@@ -19,6 +19,9 @@ def _cuts_off_the_catalogs(celestrak):
 FAILURES = {
     "répond une erreur 503": lambda celestrak: celestrak.fails_with(503),
     "répond une page web au lieu du catalogue": lambda celestrak: celestrak.publishes_a_web_page(),
+    "répond une page web d'une seule ligne démesurée": lambda celestrak: (
+        celestrak.publishes_an_endless_line()
+    ),
     "envoie un catalogue coupé au milieu d'une ligne": lambda celestrak: (
         celestrak.publishes_cut_short(VISUAL_CSV_2026)
     ),

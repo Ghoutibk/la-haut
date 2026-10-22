@@ -30,5 +30,6 @@ Fonctionnalité: Continuer d'annoncer « Ce soir » quand la source des catalogu
       | panne                                           |
       | répond une erreur 503                           |
       | répond une page web au lieu du catalogue        |
+      | répond une page web d'une seule ligne démesurée |
       | envoie un catalogue coupé au milieu d'une ligne |
       | interrompt sa réponse en cours de route         |
