@@ -1,5 +1,4 @@
 import logging
-import os
 import time
 from datetime import timedelta
 
@@ -10,20 +9,20 @@ from la_haut.infrastructure.celestrak_satellite_catalog import (
     CELESTRAK_URL_TEMPLATE,
     CelestrakSatelliteCatalog,
 )
+from tests.support.cache import THREE_HOURS_S, a_cache_written
 from tests.support.fake_celestrak import FakeCelestrak
 from tests.support.fixtures import ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2
 from tests.support.omm import omm_csv_from_tle
 
 ISS = (ISS_NAME, ISS_TLE_LINE_1, ISS_TLE_LINE_2)
-
-THREE_HOURS_S = 3 * 3600
+ISS_CATALOG = omm_csv_from_tle(ISS)
 
 # Chaque façon dont la source des catalogues peut échouer, et la cause qu'en gardent les logs.
 SOURCE_FAILURES = {
     "error 503": (lambda celestrak: celestrak.fails_with(503), "503"),
     "web page": (lambda celestrak: celestrak.publishes_a_web_page(), "OBJECT_NAME"),
     "catalog cut short": (
-        lambda celestrak: celestrak.publishes_cut_short(omm_csv_from_tle(ISS)),
+        lambda celestrak: celestrak.publishes_cut_short(ISS_CATALOG),
         "MEAN_ANOMALY",
     ),
     "answer cut off": (lambda celestrak: celestrak.cuts_off_its_answers(), "IncompleteRead"),
@@ -68,14 +67,8 @@ def test_without_a_cache_the_brightest_satellites_group_is_downloaded(celestrak,
     assert cache_path.exists()
 
 
-def a_cache_written(cache_path, seconds_ago=0):
-    cache_path.write_text(omm_csv_from_tle(ISS), "utf-8")
-    written_at = time.time() - seconds_ago
-    os.utime(cache_path, (written_at, written_at))
-
-
 def test_a_recent_cache_is_used_without_asking_celestrak_again(celestrak, cache_path):
-    a_cache_written(cache_path)
+    a_cache_written(cache_path, ISS_CATALOG)
 
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
@@ -84,7 +77,7 @@ def test_a_recent_cache_is_used_without_asking_celestrak_again(celestrak, cache_
 
 
 def test_a_cache_older_than_two_hours_is_refreshed(celestrak, cache_path):
-    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    a_cache_written(cache_path, ISS_CATALOG, seconds_ago=THREE_HOURS_S)
 
     a_catalog(celestrak, cache_path).tracked_satellites()
 
@@ -94,7 +87,7 @@ def test_a_cache_older_than_two_hours_is_refreshed(celestrak, cache_path):
 
 @pytest.mark.usefixtures("celestrak_failure")
 def test_when_celestrak_fails_the_last_known_catalog_is_used(celestrak, cache_path):
-    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    a_cache_written(cache_path, ISS_CATALOG, seconds_ago=THREE_HOURS_S)
 
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
@@ -102,13 +95,13 @@ def test_when_celestrak_fails_the_last_known_catalog_is_used(celestrak, cache_pa
 
 
 def test_a_response_that_is_not_a_catalog_never_replaces_the_cache(celestrak, cache_path):
-    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    a_cache_written(cache_path, ISS_CATALOG, seconds_ago=THREE_HOURS_S)
     celestrak.publishes("No GP data found")
 
     [iss] = a_catalog(celestrak, cache_path).tracked_satellites()
 
     assert iss.norad_id == 25544
-    assert cache_path.read_bytes() == omm_csv_from_tle(ISS).encode("utf-8")
+    assert cache_path.read_bytes() == ISS_CATALOG.encode("utf-8")
 
 
 @pytest.mark.usefixtures("celestrak_failure")
@@ -130,7 +123,7 @@ def test_after_a_failure_celestrak_is_left_alone_until_the_retry_delay(celestrak
 
 @pytest.mark.usefixtures("celestrak_failure")
 def test_after_a_failure_the_last_known_catalog_answers_without_asking_again(celestrak, cache_path):
-    a_cache_written(cache_path, seconds_ago=THREE_HOURS_S)
+    a_cache_written(cache_path, ISS_CATALOG, seconds_ago=THREE_HOURS_S)
     catalog = a_catalog(celestrak, cache_path)
 
     catalog.tracked_satellites()
