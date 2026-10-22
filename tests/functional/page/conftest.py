@@ -16,13 +16,26 @@ from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
 from la_haut.interface.http.app import create_app
-from tests.support.builders import a_planet_position, a_visible_pass, an_observer_in_paris
+from tests.support.builders import (
+    a_planet_position,
+    a_satellite,
+    a_visible_pass,
+    an_observer_in_paris,
+)
 from tests.support.fakes import (
     FakeFeedbackInbox,
     FakeSightingIdentification,
     FakeVisiblePassesListing,
 )
-from tests.support.fixtures import STARLINK_TRAIN
+from tests.support.fixtures import (
+    HUBBLE_NAME,
+    HUBBLE_TLE_LINE_1,
+    HUBBLE_TLE_LINE_2,
+    STARLINK_TRAIN,
+    TIANGONG_NAME,
+    TIANGONG_TLE_LINE_1,
+    TIANGONG_TLE_LINE_2,
+)
 from tests.support.french import DIRECTIONS, PARIS_TIME, PLANETS, french_date, paris_instant
 from tests.support.local_site import LocalSite, eventually
 from tests.support.visit import (
@@ -42,6 +55,17 @@ API_PATHS = {
     "chercher les passages": "/api/passes",
     "identifier ma lumière": "/api/identification",
     "recevoir mon message": "/api/feedback",
+}
+# Le numéro NORAD de chaque satellite qu'un scénario peut nommer : c'est par lui que Là-haut
+# trouve le nom public d'un satellite célèbre.
+NORAD_IDS = {
+    satellite.name: satellite.norad_id
+    for satellite in (
+        a_satellite(),
+        a_satellite(TIANGONG_NAME, (TIANGONG_TLE_LINE_1, TIANGONG_TLE_LINE_2)),
+        a_satellite(HUBBLE_NAME, (HUBBLE_TLE_LINE_1, HUBBLE_TLE_LINE_2)),
+        *(a_satellite(name, (line_1, line_2)) for name, line_1, line_2 in STARLINK_TRAIN),
+    )
 }
 
 
@@ -85,6 +109,7 @@ def a_pass_from(row: dict[str, str], day: date):
         names = [name for name, *_ in STARLINK_TRAIN][: int(train["size"])]
     return a_visible_pass(
         satellite_name=names[0],
+        norad_id=NORAD_IDS[names[0]],
         train_followers=tuple(names[1:]),
         starts_at=starts_at,
         ends_at=ends_at,
