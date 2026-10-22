@@ -29,3 +29,9 @@ Fonctionnalité: Signaler un problème ou proposer une idée
     Quand j'envoie le problème « La boussole ne bouge pas sur mon Android » avec mon e-mail claire.example.org
     Alors mon avis est refusé : « Cette adresse e-mail ne semble pas valide. »
     Et aucun ticket n'arrive dans la boîte à avis
+
+  Scénario: Au-delà de 20 avis dans l'heure, le site demande d'attendre
+    Étant donné que 20 avis sont déjà arrivés dans l'heure
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis est refusé : « Beaucoup de messages viennent d'arriver : réessaie dans un moment. »
+    Et la boîte à avis n'a reçu que les 20 premiers

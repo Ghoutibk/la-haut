@@ -41,6 +41,12 @@ def send(site, kind, message, contact=None):
     return site.post("/api/feedback", json={"kind": kind, "message": message, "contact": contact})
 
 
+@given(parsers.parse("{count:d} avis sont déjà arrivés dans l'heure"))
+def feedback_already_arrived_this_hour(site, count):
+    for _ in range(count):
+        send(site, "idea", "Encore une idée")
+
+
 @when(
     parsers.parse("j'envoie le problème « {message} » avec mon e-mail {contact}"),
     target_fixture="answer",
@@ -99,3 +105,8 @@ def my_feedback_is_refused(answer, reason):
 @then("aucun ticket n'arrive dans la boîte à avis")
 def no_issue_arrives(github):
     assert github.issues == []
+
+
+@then(parsers.parse("la boîte à avis n'a reçu que les {count:d} premiers"))
+def only_the_first_ones_arrived(github, count):
+    assert len(github.issues) == count
