@@ -21,6 +21,7 @@ ISS_CATALOG = omm_csv_from_tle(ISS)
 SOURCE_FAILURES = {
     "error 503": (lambda celestrak: celestrak.fails_with(503), "503"),
     "web page": (lambda celestrak: celestrak.publishes_a_web_page(), "OBJECT_NAME"),
+    "endless line": (lambda celestrak: celestrak.publishes_an_endless_line(), "field limit"),
     "catalog cut short": (
         lambda celestrak: celestrak.publishes_cut_short(ISS_CATALOG),
         "MEAN_ANOMALY",

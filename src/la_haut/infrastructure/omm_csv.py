@@ -8,12 +8,15 @@ NAME_FIELD = "OBJECT_NAME"
 
 
 class InvalidOmmCatalogError(ValueError):
-    """Des lignes sans nom d'objet ne forment pas un catalogue OMM : une page web, par exemple."""
+    """Un texte qui ne se lit pas comme un catalogue OMM : une page web, par exemple."""
 
 
 def parse_omm_csv(text: str) -> list[Satellite]:
     """Lit un catalogue OMM au format CSV de CelesTrak : un satellite par ligne, après l'en-tête."""
-    return [_satellite_from(row) for row in csv.DictReader(io.StringIO(text))]
+    try:
+        return [_satellite_from(row) for row in csv.DictReader(io.StringIO(text))]
+    except csv.Error as error:
+        raise InvalidOmmCatalogError(f"Texte illisible en CSV : {error}") from error
 
 
 def _satellite_from(row: dict[str, str]) -> Satellite:

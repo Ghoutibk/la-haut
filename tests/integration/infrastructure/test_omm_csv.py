@@ -31,6 +31,11 @@ def test_a_web_page_is_not_a_catalog():
         parse_omm_csv("<!DOCTYPE html>\n<html><body>Maintenance</body></html>\n")
 
 
+def test_a_line_too_long_to_be_read_is_not_a_catalog():
+    with pytest.raises(InvalidOmmCatalogError):
+        parse_omm_csv("<!DOCTYPE html><html><body>" + "x" * 200_000 + "</body></html>\n")
+
+
 def test_a_row_missing_an_element_is_rejected():
     header, iss_row = VISUAL_CSV_2026.splitlines()[:2]
     truncated = iss_row.rsplit(",", 1)[0] + ","
