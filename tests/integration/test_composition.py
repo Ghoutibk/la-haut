@@ -24,6 +24,8 @@ from tests.support.fixtures import (
     ISS_TLE_EPOCH,
     ISS_TLE_LINE_1,
     ISS_TLE_LINE_2,
+    PARIS_LATITUDE_DEG,
+    PARIS_LONGITUDE_DEG,
     ROCKET_BODY_NAME,
     ROCKET_BODY_TLE_LINE_1,
     ROCKET_BODY_TLE_LINE_2,
@@ -106,8 +108,8 @@ def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment
     tmp_path, monkeypatch
 ):
     venus_at_dusk = {
-        "latitude": 48.8566,
-        "longitude": 2.3522,
+        "latitude": PARIS_LATITUDE_DEG,
+        "longitude": PARIS_LONGITUDE_DEG,
         "at": "2018-07-03T22:45:00+02:00",
         "direction": "W",
     }

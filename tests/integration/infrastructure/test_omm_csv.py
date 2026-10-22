@@ -2,8 +2,9 @@ import pytest
 
 from la_haut.domain.orbit_mean_elements import InvalidOrbitMeanElementsError
 from la_haut.domain.starlink import is_starlink
-from la_haut.infrastructure.omm_csv import parse_omm_csv
+from la_haut.infrastructure.omm_csv import InvalidOmmCatalogError, parse_omm_csv
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
+from tests.support.omm import cut_short
 
 
 def test_the_recent_launches_are_read_with_their_numbers_beyond_99999():
@@ -25,9 +26,19 @@ def test_an_answer_without_data_holds_no_satellite():
     assert parse_omm_csv("No GP data found") == []
 
 
+def test_a_web_page_is_not_a_catalog():
+    with pytest.raises(InvalidOmmCatalogError):
+        parse_omm_csv("<!DOCTYPE html>\n<html><body>Maintenance</body></html>\n")
+
+
 def test_a_row_missing_an_element_is_rejected():
     header, iss_row = VISUAL_CSV_2026.splitlines()[:2]
     truncated = iss_row.rsplit(",", 1)[0] + ","
 
     with pytest.raises(InvalidOrbitMeanElementsError):
         parse_omm_csv(f"{header}\n{truncated}\n")
+
+
+def test_a_row_cut_short_between_two_columns_is_rejected():
+    with pytest.raises(InvalidOrbitMeanElementsError):
+        parse_omm_csv(cut_short(VISUAL_CSV_2026))

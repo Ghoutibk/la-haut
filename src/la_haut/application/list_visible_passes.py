@@ -30,6 +30,7 @@ class ListVisiblePasses:
                 self._tracker.track(satellite, observer, window),
                 self._visibility,
                 launch=satellite.elements.launch,
+                norad_id=satellite.norad_id,
             )
         ]
         # Les trains d'abord : des Starlink serrés dans leur file ne sont pas des objets amarrés.

@@ -1,3 +1,4 @@
+import http.client
 import json
 import logging
 import re
@@ -83,7 +84,8 @@ class GitHubIssuesFeedbackInbox:
         try:
             with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_S, context=context):
                 pass
-        except OSError as error:
+        # Une réponse illisible (BadStatusLine) n'est pas une OSError : elle compte aussi.
+        except (OSError, http.client.HTTPException) as error:
             logger.warning("Avis non remis au dépôt %s : %s", self._repository, error)
             raise FeedbackUnavailableError("GitHub n'a pas pris l'avis") from error
 

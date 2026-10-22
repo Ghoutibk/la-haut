@@ -14,3 +14,39 @@ Fonctionnalité: Signaler un problème ou proposer une idée
   Scénario: Je propose une idée sans laisser d'e-mail
     Quand j'envoie l'idée « Ajouter les passages de la Lune »
     Alors un ticket « idée » arrive dans la boîte à avis, avec mon message et sans e-mail
+
+  Scénario: Un message vide est refusé
+    Quand j'envoie un problème sans message
+    Alors mon avis est refusé : « Écris ton message avant de l'envoyer. »
+    Et aucun ticket n'arrive dans la boîte à avis
+
+  Scénario: Un message de plus de 2 000 caractères est refusé
+    Quand j'envoie un problème de 2001 caractères
+    Alors mon avis est refusé : « Ton message dépasse 2000 caractères : raccourcis-le un peu. »
+    Et aucun ticket n'arrive dans la boîte à avis
+
+  Scénario: Une adresse e-mail illisible est refusée
+    Quand j'envoie le problème « La boussole ne bouge pas sur mon Android » avec mon e-mail claire.example.org
+    Alors mon avis est refusé : « Cette adresse e-mail ne semble pas valide. »
+    Et aucun ticket n'arrive dans la boîte à avis
+
+  Scénario: Au-delà de 20 avis dans l'heure, le site demande d'attendre
+    Étant donné que 20 avis sont déjà arrivés dans l'heure
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis est refusé : « Beaucoup de messages viennent d'arriver : réessaie dans un moment. »
+    Et la boîte à avis n'a reçu que les 20 premiers
+
+  Plan du scénario: Quand GitHub ne prend pas l'avis, le site demande de réessayer plus tard
+    Étant donné que GitHub <panne>
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis ne peut pas partir : « L'envoi des avis est indisponible pour le moment, réessaie plus tard. »
+
+    Exemples:
+      | panne                 |
+      | refuse le jeton       |
+      | répond n'importe quoi |
+
+  Scénario: Tant que son jeton n'est pas réglé, le site dit que l'envoi n'est pas encore possible
+    Étant donné que le jeton de la boîte à avis n'est pas encore réglé sur le site
+    Quand j'envoie l'idée « Ajouter les passages de la Lune »
+    Alors mon avis ne peut pas partir : « L'envoi des avis n'est pas encore configuré sur ce site. »

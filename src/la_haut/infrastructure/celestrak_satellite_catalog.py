@@ -1,3 +1,4 @@
+import http.client
 import logging
 import ssl
 import time
@@ -71,7 +72,8 @@ class CelestrakSatelliteCatalog:
             text = self._download()
             if not parse_omm_csv(text):
                 raise ValueError("Catalogue vide")
-        except (OSError, ValueError) as error:
+        # Une réponse interrompue (IncompleteRead) n'est pas une OSError : elle compte aussi.
+        except (OSError, http.client.HTTPException, ValueError) as error:
             logger.warning("CelesTrak injoignable pour le groupe %s : %s", self._group, error)
             self._failed_at = time.monotonic()
             return  # le dernier catalogue connu, s'il existe, reste valable en attendant

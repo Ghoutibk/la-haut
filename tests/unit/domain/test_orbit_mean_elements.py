@@ -33,6 +33,12 @@ def test_elements_missing_a_field_are_rejected(missing):
         OrbitMeanElements.from_fields(fields)
 
 
+@pytest.mark.parametrize("field", ["OBJECT_ID", "EPOCH", "MEAN_MOTION", "NORAD_CAT_ID"])
+def test_elements_with_a_field_left_without_value_are_rejected(field):
+    with pytest.raises(InvalidOrbitMeanElementsError):
+        some_orbit_mean_elements(**{field: None})
+
+
 @pytest.mark.parametrize(
     "field, value",
     [("MEAN_MOTION", "quinze"), ("NORAD_CAT_ID", "25544.5"), ("EPOCH", "2026-10-06")],

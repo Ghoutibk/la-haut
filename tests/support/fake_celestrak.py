@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import PurePosixPath
 from urllib.parse import parse_qs, urlparse
 
-from tests.support.omm import omm_csv_from_tle
+from tests.support.omm import cut_short, omm_csv_from_tle
 
 
 class FakeCelestrak:
@@ -16,6 +16,8 @@ class FakeCelestrak:
         self.body = ""
         self.bodies_by_group: dict[str, str] = {}
         self.status = 200
+        self.statuses_by_group: dict[str, int] = {}
+        self.cuts_off = False
         self.requests: list[dict[str, list[str]]] = []
         self.paths: list[str] = []
         fake = self
@@ -28,11 +30,12 @@ class FakeCelestrak:
                 fake.paths.append(url.path)
                 [group] = query.get("GROUP", [PurePosixPath(url.path).stem])
                 payload = fake.bodies_by_group.get(group, fake.body).encode("utf-8")
-                self.send_response(fake.status)
+                self.send_response(fake.statuses_by_group.get(group, fake.status))
                 self.send_header("Content-Type", "text/plain; charset=utf-8")
                 self.send_header("Content-Length", str(len(payload)))
                 self.end_headers()
-                self.wfile.write(payload)
+                # Interrompue, la réponse s'arrête à la moitié de la longueur annoncée.
+                self.wfile.write(payload[: len(payload) // 2] if fake.cuts_off else payload)
 
             def log_message(self, *args) -> None:
                 pass
@@ -61,10 +64,31 @@ class FakeCelestrak:
         else:
             self.bodies_by_group[group] = body
         self.status = 200
+        self.cuts_off = False
 
     def publishes_as_omm(self, *entries: tuple[str, str, str], group: str | None = None) -> None:
         """Publie ces TLE (nom, ligne 1, ligne 2), convertis en catalogue OMM au format CSV."""
         self.publishes(*omm_csv_from_tle(*entries).splitlines(), group=group)
 
-    def fails_with(self, status: int) -> None:
-        self.status = status
+    def publishes_a_web_page(self) -> None:
+        """Répond une page web, comme une page de maintenance, au lieu d'un catalogue."""
+        self.publishes(
+            "<!DOCTYPE html>",
+            "<html><head><title>Maintenance</title></head>",
+            "<body>Back soon.</body></html>",
+        )
+
+    def publishes_cut_short(self, catalog: str) -> None:
+        """Publie ce catalogue coupé entre deux colonnes de son premier satellite."""
+        self.publishes(*cut_short(catalog).splitlines())
+
+    def cuts_off_its_answers(self) -> None:
+        """Annonce chaque catalogue en entier, n'en envoie que la moitié et raccroche."""
+        self.cuts_off = True
+
+    def fails_with(self, status: int, group: str | None = None) -> None:
+        """Répond cette erreur pour un groupe donné, ou pour tous les groupes sans erreur propre."""
+        if group is None:
+            self.status = status
+        else:
+            self.statuses_by_group[group] = status

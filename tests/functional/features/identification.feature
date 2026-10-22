@@ -10,7 +10,7 @@ Fonctionnalité: Savoir ce qu'était la lumière que j'ai vue
 
   Plan du scénario: Je retrouve l'ISS que j'ai vue passer avant l'aube
     Quand j'ai vu une lumière le 4 juillet 2018 à <heure>, direction <direction>
-    Alors c'était ISS (ZARYA)
+    Alors c'était la Station spatiale internationale
 
     Exemples:
       | heure | direction | moment                          |
@@ -40,5 +40,5 @@ Fonctionnalité: Savoir ce qu'était la lumière que j'ai vue
 
   Scénario: Un satellite passe avant une planète vue dans la même direction
     Quand j'ai vu une lumière le 4 juillet 2018 à 04:56, direction sud-est
-    Alors c'était ISS (ZARYA)
+    Alors c'était la Station spatiale internationale
     Et sinon, c'était la planète Mars

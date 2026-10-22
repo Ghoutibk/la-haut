@@ -38,3 +38,10 @@ def omm_csv_from_tle(*entries: tuple[str, str, str]) -> str:
     for name, line_1, line_2 in entries:
         writer.writerow(exporter.export_omm(Satrec.twoline2rv(line_1, line_2), name))
     return text.getvalue()
+
+
+def cut_short(catalog: str) -> str:
+    """Ce catalogue CSV coupé entre deux colonnes de son premier satellite : un envoi tronqué."""
+    header, first_row, *_ = catalog.splitlines()
+    columns = first_row.split(",")
+    return f"{header}\r\n{','.join(columns[: len(columns) // 2])}\r\n"

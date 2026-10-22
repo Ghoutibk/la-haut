@@ -1,4 +1,4 @@
-from la_haut.application.list_visible_passes import ListVisiblePasses
+from la_haut.application.ports import VisiblePassesListing
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import SIGHTING_TIME_TOLERANCE, Sighting
 from la_haut.domain.time_window import TimeWindow
@@ -8,7 +8,7 @@ from la_haut.domain.visible_pass import VisiblePass
 class IdentifySighting:
     """Cas d'usage : « c'était quoi, ça ? » — les satellites qui collent au signalement."""
 
-    def __init__(self, list_visible_passes: ListVisiblePasses) -> None:
+    def __init__(self, list_visible_passes: VisiblePassesListing) -> None:
         self._list_visible_passes = list_visible_passes
 
     def execute(self, observer: Observer, sighting: Sighting) -> list[VisiblePass]:

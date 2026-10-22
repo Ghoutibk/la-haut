@@ -1,13 +1,14 @@
 from pytest_bdd import parsers, scenarios, then
 
+from la_haut.interface.http.presenters import present_candidate
 from tests.support.french import PLANETS
 
 scenarios("identification.feature")
 
 
-@then(parsers.parse("c'était {satellite_name}"))
-def it_was(identification, satellite_name):
-    assert identification.candidates[0].satellite_name == satellite_name
+@then(parsers.parse("c'était la {public_name}"))
+def it_was(identification, public_name):
+    assert present_candidate(identification.candidates[0])["name"] == public_name
 
 
 @then("ce n'était aucun satellite connu")

@@ -91,6 +91,17 @@ def test_a_refusal_from_github_makes_the_inbox_unavailable_and_is_logged(github,
     assert TOKEN not in record.getMessage()
 
 
+def test_an_unreadable_answer_from_github_makes_the_inbox_unavailable_and_is_logged(github, caplog):
+    github.answers_nonsense()
+
+    with caplog.at_level(logging.WARNING), pytest.raises(FeedbackUnavailableError):
+        deliver(github)
+
+    [record] = caplog.records
+    assert "Nonsense" in record.getMessage()
+    assert TOKEN not in record.getMessage()
+
+
 def test_an_unreachable_github_makes_the_inbox_unavailable():
     inbox = GitHubIssuesFeedbackInbox(REPOSITORY, TOKEN, api_url="http://127.0.0.1:9")
 

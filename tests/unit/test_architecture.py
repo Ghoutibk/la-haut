@@ -7,15 +7,22 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "src" / "la_haut"
 
 
-def _imported_modules(layer: str) -> set[str]:
+def _imported_modules_of(path: Path) -> set[str]:
     modules = set()
-    for path in (PACKAGE_ROOT / layer).rglob("*.py"):
-        for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-            if isinstance(node, ast.Import):
-                modules.update(alias.name for alias in node.names)
-            elif isinstance(node, ast.ImportFrom) and node.module:
-                modules.add(node.module)
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            modules.update(alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            modules.add(node.module)
     return modules
+
+
+def _imported_modules(layer: str) -> set[str]:
+    return {
+        module
+        for path in (PACKAGE_ROOT / layer).rglob("*.py")
+        for module in _imported_modules_of(path)
+    }
 
 
 def _imports_outside(layer: str, allowed_packages: tuple[str, ...]) -> list[str]:
@@ -33,6 +40,17 @@ def test_the_domain_depends_only_on_itself_and_the_standard_library():
 
 def test_the_application_depends_only_on_the_domain_and_the_standard_library():
     assert _imports_outside("application", ("la_haut.domain", "la_haut.application")) == []
+
+
+def test_the_use_cases_depend_on_ports_never_on_one_another():
+    ports = "la_haut.application.ports"
+
+    assert [
+        f"{path.name} → {module}"
+        for path in (PACKAGE_ROOT / "application").rglob("*.py")
+        for module in _imported_modules_of(path)
+        if module.startswith("la_haut.application") and module != ports
+    ] == []
 
 
 def test_the_interface_never_reaches_the_adapters_directly():

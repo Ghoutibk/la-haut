@@ -51,9 +51,17 @@ class PlanetLocator(Protocol):
 
 
 class VisiblePassesListing(Protocol):
-    """Ce que l'interface attend de « Ce soir », calculé à chaque fois ou par créneaux."""
+    """Les passages visibles d'une fenêtre, calculés à chaque fois ou par créneaux : ce
+    qu'attendent « Ce soir » et l'identification parmi les satellites."""
 
     def execute(self, observer: Observer, window: TimeWindow) -> list[VisiblePass]: ...
+
+
+class SatelliteIdentification(Protocol):
+    """Les passages de satellites qui collent au signalement, du plus au moins probable : ce
+    qu'attend l'identification qui y ajoute les planètes."""
+
+    def execute(self, observer: Observer, sighting: Sighting) -> list[VisiblePass]: ...
 
 
 class SightingIdentification(Protocol):

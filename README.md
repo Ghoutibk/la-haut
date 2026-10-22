@@ -120,13 +120,16 @@ src/la_haut/
 | Catalogue combiné | `CombinedSatelliteCatalog` | Plusieurs catalogues réunis, chaque numéro NORAD une seule fois ; un catalogue indisponible n'empêche pas d'annoncer les autres |
 | Traqueur de ciel | `SkyTracker` | Port : la trace d'un satellite dans le ciel de l'observateur, tant qu'il est au-dessus de l'horizon |
 | Balayage | `SCAN_STEP` | Le premier passage du traqueur, toutes les minutes, qui trouve quand un satellite est au-dessus de l'horizon |
+| Liste des passages visibles | `VisiblePassesListing` | Port : les passages visibles d'une fenêtre, calculés à chaque fois ou par créneaux ; « Ce soir » et l'identification parmi les satellites en dépendent |
 | Créneau | `ListVisiblePassesBySlot`, `SLOT` | Un quart d'heure : « Ce soir » se calcule une fois par créneau et par observateur |
 | Planète | `Planet` | Vénus, Jupiter, Mars ou Saturne : les planètes brillantes que l'on prend pour un satellite ou un avion |
 | Position d'une planète | `PlanetPosition` | Où se trouve une planète dans le ciel de l'observateur à un instant, avec la hauteur du Soleil |
 | Écart à la direction | `PlanetPosition.angle_to`, `CompassPoint.azimuth_deg` | Angle entre la planète et le milieu de la direction signalée ; aucun si elle était sous l'horizon, dans un ciel trop clair ou ailleurs |
 | Localisateur de planètes | `PlanetLocator` | Port : la position d'une planète vue par l'observateur à un instant |
-| Candidat | `SightingIdentification` | Ce que propose « C'était quoi, ça ? » : un passage (satellite ou train Starlink) ou une planète, les satellites d'abord |
+| Candidat | `Candidate` | Ce que propose « C'était quoi, ça ? » : un passage (satellite ou train Starlink) ou une planète, les satellites d'abord |
 | Identification | `Identification` | La réponse à « C'était quoi, ça ? » : les candidats, du plus au moins probable |
+| Identification parmi les satellites | `SatelliteIdentification` | Port : les passages de satellites qui collent au signalement, du plus au moins probable ; les planètes s'y ajoutent ensuite |
+| Identification d'un signalement | `SightingIdentification` | Port : ce que l'interface attend de « C'était quoi, ça ? », planètes comprises ou non |
 | Satellites vérifiés | `Identification.satellites_checked` | Faux quand le catalogue des satellites manquait : seules les planètes ont été cherchées, et la page le dit |
 | Avis | `Feedback` | Un message d'un visiteur à l'auteur du site, avec son e-mail facultatif pour une réponse |
 | Nature de l'avis | `FeedbackKind` | Un problème, une idée ou autre chose |
