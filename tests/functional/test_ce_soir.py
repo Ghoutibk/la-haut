@@ -6,11 +6,9 @@ fusée H-2A R/B (43682) de 06:41:09 à 06:47:46."""
 from pytest_bdd import given, parsers, scenarios, then
 
 from tests.support.fixtures import TIANGONG_NAME, VISUAL_CSV_2026
+from tests.support.tonight import is_a_starlink_announcement
 
 scenarios("ce_soir.feature")
-
-# Un Starlink seul garde son nom de catalogue ; une file devient « Train Starlink (N satellites) ».
-STARLINK_NAMES = ("STARLINK-", "Train Starlink")
 
 
 @given(parsers.parse("CelesTrak renomme la station chinoise « {new_name} »"))
@@ -23,6 +21,6 @@ def celestrak_renames_the_chinese_station(celestrak, new_name):
 def only_the_chinese_station_and_starlinks(tonight):
     names = {announced["name"] for announced in tonight.json()["passes"]}
 
-    assert {name for name in names if not name.startswith(STARLINK_NAMES)} == {
+    assert {name for name in names if not is_a_starlink_announcement(name)} == {
         "Station spatiale chinoise Tiangong"
     }

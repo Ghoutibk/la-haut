@@ -5,6 +5,7 @@ from pytest_bdd import given, parsers, scenarios, then
 from la_haut.composition import RECENT_LAUNCHES_GROUP
 from tests.support.cache import THREE_HOURS_S, a_cache_written
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
+from tests.support.tonight import is_a_starlink_announcement
 
 scenarios("catalogues_indisponibles.feature")
 
@@ -55,4 +56,4 @@ def tonight_answers(tonight, message):
 def no_starlink_is_announced(tonight):
     names = [announced["name"] for announced in tonight.json()["passes"]]
 
-    assert [name for name in names if "starlink" in name.lower()] == []
+    assert [name for name in names if is_a_starlink_announcement(name)] == []
