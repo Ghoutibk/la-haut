@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { COMPASS_POINTS, FRENCH_NAMES, compassPointOf, headingFrom } from "./compass";
+import {
+  COMPASS_POINTS,
+  COMPASS_ROSE,
+  FRENCH_NAMES,
+  OBSERVER,
+  compassPointOf,
+  headingFrom,
+} from "./compass";
 
 describe("la boussole du téléphone", () => {
   it("range un cap dans le secteur de son point cardinal, découpé comme dans le domaine", () => {
@@ -33,5 +40,17 @@ describe("la boussole du téléphone", () => {
   it("nomme chaque point cardinal en français", () => {
     expect(Object.keys(FRENCH_NAMES)).toEqual(COMPASS_POINTS);
     expect(FRENCH_NAMES.NE).toBe("nord-est");
+  });
+
+  it("dispose la rose des vents autour de l'observateur, le nord en haut", () => {
+    const cells = COMPASS_ROSE.map((row) =>
+      row.map((cell) => (cell === OBSERVER ? "Toi" : `${cell.abbreviation} (${cell.name})`)),
+    );
+
+    expect(cells).toEqual([
+      ["NO (Nord-ouest)", "N (Nord)", "NE (Nord-est)"],
+      ["O (Ouest)", "Toi", "E (Est)"],
+      ["SO (Sud-ouest)", "S (Sud)", "SE (Sud-est)"],
+    ]);
   });
 });

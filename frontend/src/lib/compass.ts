@@ -41,3 +41,37 @@ export function compassPointOf(heading: number): CompassPoint {
   const index = Math.floor((heading + DEGREES_PER_POINT / 2) / DEGREES_PER_POINT);
   return COMPASS_POINTS[index % COMPASS_POINTS.length] ?? "N";
 }
+
+// Un bouton de la rose des vents : l'abréviation lue sur le bouton et le nom dit en toutes lettres.
+export interface RoseChoice {
+  readonly point: CompassPoint;
+  readonly abbreviation: string;
+  readonly name: string;
+}
+
+// La case du milieu de la rose : la personne qui regarde le ciel.
+export const OBSERVER = "observer";
+
+const ROSE_LAYOUT = [
+  ["NW", "N", "NE"],
+  ["W", OBSERVER, "E"],
+  ["SW", "S", "SE"],
+] as const;
+
+function capitalized(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function roseChoice(point: CompassPoint): RoseChoice {
+  const name = FRENCH_NAMES[point];
+  const abbreviation = name
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
+  return { point, abbreviation, name: capitalized(name) };
+}
+
+// La rose des vents vue depuis l'observateur, le nord en haut, ligne par ligne.
+export const COMPASS_ROSE: readonly (readonly (RoseChoice | typeof OBSERVER)[])[] = ROSE_LAYOUT.map(
+  (row) => row.map((cell) => (cell === OBSERVER ? OBSERVER : roseChoice(cell))),
+);
