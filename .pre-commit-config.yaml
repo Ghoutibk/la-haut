@@ -33,3 +33,21 @@ repos:
         language: system
         pass_filenames: false
         files: \.js$
+      - id: frontend-typecheck
+        name: tsc (page web)
+        entry: npm --prefix frontend run typecheck
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-lint
+        name: eslint (page web)
+        entry: npm --prefix frontend run lint
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-test
+        name: vitest (page web)
+        entry: npm --prefix frontend test
+        language: system
+        pass_filenames: false
+        files: ^frontend/
