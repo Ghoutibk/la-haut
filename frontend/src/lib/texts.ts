@@ -3,6 +3,7 @@
 
 export const SKY_UNREACHABLE = "Le ciel est injoignable pour le moment.";
 export const MESSAGE_NOT_SENT = "Ton message n'a pas pu partir : vérifie-le et réessaie.";
+export const SEARCHING_PASSES = "Recherche des passages…";
 export const TRAIN_EXPLANATION =
   "Une file de points brillants qui se suivent : les satellites Starlink d'un même lancement, quelques jours après leur mise en orbite.";
 export const PLANET_EXPLANATION =
