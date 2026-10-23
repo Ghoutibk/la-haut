@@ -5,9 +5,11 @@ import {
   COMPASS_ROSE,
   FRENCH_NAMES,
   OBSERVER,
+  aimingAt,
   compassPointOf,
   headingFrom,
 } from "./compass";
+import type { CompassPoint } from "./compass";
 
 describe("la boussole du téléphone", () => {
   it("range un cap dans le secteur de son point cardinal, découpé comme dans le domaine", () => {
@@ -51,6 +53,17 @@ describe("la boussole du téléphone", () => {
       ["NO (Nord-ouest)", "N (Nord)", "NE (Nord-est)"],
       ["O (Ouest)", "Toi", "E (Est)"],
       ["SO (Sud-ouest)", "S (Sud)", "SE (Sud-est)"],
+    ]);
+  });
+
+  it("dit vers quel point cardinal le téléphone vise", () => {
+    const points: CompassPoint[] = ["N", "NE", "E", "W"];
+
+    expect(points.map(aimingAt)).toEqual([
+      "Tu vises le nord",
+      "Tu vises le nord-est",
+      "Tu vises l'est",
+      "Tu vises l'ouest",
     ]);
   });
 });

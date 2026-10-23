@@ -1,5 +1,7 @@
 // La boussole du téléphone : de l'événement d'orientation au point cardinal, sans toucher la page.
 
+import { theDirection } from "./french";
+
 export const COMPASS_POINTS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"] as const;
 export type CompassPoint = (typeof COMPASS_POINTS)[number];
 
@@ -40,6 +42,10 @@ export function headingFrom(orientation: Orientation): number | null {
 export function compassPointOf(heading: number): CompassPoint {
   const index = Math.floor((heading + DEGREES_PER_POINT / 2) / DEGREES_PER_POINT);
   return COMPASS_POINTS[index % COMPASS_POINTS.length] ?? "N";
+}
+
+export function aimingAt(point: CompassPoint): string {
+  return `Tu vises ${theDirection(FRENCH_NAMES[point])}`;
 }
 
 // Un bouton de la rose des vents : l'abréviation lue sur le bouton et le nom dit en toutes lettres.
