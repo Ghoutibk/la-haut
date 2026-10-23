@@ -26,12 +26,19 @@ function theOrientationIs(type: string, init: DeviceOrientationEventInit) {
   });
 }
 
+function secondsGoBy(seconds: number) {
+  act(() => {
+    vi.advanceTimersByTime(seconds * 1000);
+  });
+}
+
 function aimingWith(callbacks: Partial<AimingCallbacks> = {}) {
-  return renderHook(() => useAiming({ onPoint: vi.fn(), ...callbacks }));
+  return renderHook(() => useAiming({ onPoint: vi.fn(), onError: vi.fn(), ...callbacks }));
 }
 
 describe("viser avec le téléphone", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     if (ORIENTATION_EVENT) Object.defineProperty(window, "DeviceOrientationEvent", ORIENTATION_EVENT);
   });
@@ -107,5 +114,58 @@ describe("viser avec le téléphone", () => {
     });
 
     expect(result.current.reading).toBe("Lecture de la boussole…");
+  });
+
+  it("abandonne au bout de 3 secondes une boussole qui ne sait pas où est le nord", () => {
+    vi.useFakeTimers();
+    anAndroidPhone();
+    const onError = vi.fn();
+    const { result } = aimingWith({ onError });
+    act(() => {
+      result.current.start();
+    });
+
+    theOrientationIs("deviceorientationabsolute", { alpha: 10, absolute: false });
+    secondsGoBy(2.999);
+    expect(result.current.active).toBe(true);
+    secondsGoBy(0.001);
+
+    expect(result.current.active).toBe(false);
+    expect(onError).toHaveBeenCalledWith(
+      "La boussole de ton téléphone ne répond pas : choisis la direction toi-même.",
+    );
+  });
+
+  it("garde une boussole qui a donné un cap, même s'il tarde à changer", () => {
+    vi.useFakeTimers();
+    anAndroidPhone();
+    const onError = vi.fn();
+    const { result } = aimingWith({ onError });
+    act(() => {
+      result.current.start();
+    });
+
+    theOrientationIs("deviceorientationabsolute", { alpha: 313, absolute: true });
+    secondsGoBy(3);
+
+    expect(result.current.active).toBe(true);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("ne s'impatiente plus une fois la visée arrêtée", () => {
+    vi.useFakeTimers();
+    anAndroidPhone();
+    const onError = vi.fn();
+    const { result } = aimingWith({ onError });
+    act(() => {
+      result.current.start();
+    });
+    act(() => {
+      result.current.stop();
+    });
+
+    secondsGoBy(3);
+
+    expect(onError).not.toHaveBeenCalled();
   });
 });
