@@ -93,3 +93,8 @@ export async function sendFeedback(feedback: FeedbackForm): Promise<void> {
   });
   await answerOf(response, MESSAGE_NOT_SENT);
 }
+
+// Ce que la page affiche d'un appel qui a échoué.
+export function failureMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

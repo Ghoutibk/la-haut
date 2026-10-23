@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { identify, searchPasses, sendFeedback } from "./api";
+import { failureMessage, identify, searchPasses, sendFeedback } from "./api";
 import type { Observer } from "./observer";
 
 const LYON: Observer = { latitude: 45.76, longitude: 4.84, label: "Ta position" };
@@ -85,5 +85,12 @@ describe("les appels à l'API de Là-haut", () => {
     await expect(sendFeedback(feedback)).rejects.toThrow(
       "Ton message n'a pas pu partir : vérifie-le et réessaie.",
     );
+  });
+
+  it("lit le message d'un échec pour l'afficher tel quel", () => {
+    expect(failureMessage(new Error("Le ciel est injoignable pour le moment."))).toBe(
+      "Le ciel est injoignable pour le moment.",
+    );
+    expect(failureMessage("coupure")).toBe("coupure");
   });
 });
