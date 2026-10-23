@@ -13,3 +13,4 @@ export const SATELLITES_UNCHECKED =
 export const CHOOSE_DIRECTION = "Choisis la direction où tu l'as vue.";
 export const GIVE_TIME = "Indique l'heure à laquelle tu l'as vue.";
 export const WRITE_MESSAGE = "Écris ton message avant de l'envoyer.";
+export const COMPASS_READING = "Lecture de la boussole…";
