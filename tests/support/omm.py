@@ -45,3 +45,8 @@ def cut_short(catalog: str) -> str:
     header, first_row, *_ = catalog.splitlines()
     columns = first_row.split(",")
     return f"{header}\r\n{','.join(columns[: len(columns) // 2])}\r\n"
+
+
+def a_line_too_long_to_read() -> str:
+    """Une page web d'un seul tenant, plus longue que le plus long champ lisible en CSV."""
+    return "<!DOCTYPE html><html><body>" + "x" * csv.field_size_limit() + "</body></html>"

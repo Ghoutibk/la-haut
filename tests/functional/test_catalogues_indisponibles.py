@@ -1,15 +1,13 @@
-import os
 import re
-import time
 
 from pytest_bdd import given, parsers, scenarios, then
 
 from la_haut.composition import RECENT_LAUNCHES_GROUP
+from tests.support.cache import THREE_HOURS_S, a_cache_written
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
+from tests.support.tonight import is_a_starlink_announcement
 
 scenarios("catalogues_indisponibles.feature")
-
-THREE_HOURS_S = 3 * 3600
 
 
 def _cuts_off_the_catalogs(celestrak):
@@ -21,6 +19,9 @@ def _cuts_off_the_catalogs(celestrak):
 FAILURES = {
     "répond une erreur 503": lambda celestrak: celestrak.fails_with(503),
     "répond une page web au lieu du catalogue": lambda celestrak: celestrak.publishes_a_web_page(),
+    "répond une page web d'une seule ligne démesurée": lambda celestrak: (
+        celestrak.publishes_an_endless_line()
+    ),
     "envoie un catalogue coupé au milieu d'une ligne": lambda celestrak: (
         celestrak.publishes_cut_short(VISUAL_CSV_2026)
     ),
@@ -30,13 +31,12 @@ FAILURES = {
 
 @given("Là-haut a gardé les catalogues du 6 octobre 2026, téléchargés il y a trois heures")
 def catalogs_kept_from_three_hours_ago(cache_path):
-    three_hours_ago = time.time() - THREE_HOURS_S
-    for path, catalog in (
-        (cache_path, VISUAL_CSV_2026),
-        (cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.csv"), LAST_30_DAYS_CSV_2026),
-    ):
-        path.write_text(catalog, "utf-8")
-        os.utime(path, (three_hours_ago, three_hours_ago))
+    a_cache_written(cache_path, VISUAL_CSV_2026, seconds_ago=THREE_HOURS_S)
+    a_cache_written(
+        cache_path.with_name(f"{RECENT_LAUNCHES_GROUP}.csv"),
+        LAST_30_DAYS_CSV_2026,
+        seconds_ago=THREE_HOURS_S,
+    )
 
 
 @given(parsers.re("CelesTrak (?P<failure>" + "|".join(map(re.escape, FAILURES)) + ")"))
@@ -59,4 +59,4 @@ def tonight_answers(tonight, message):
 def no_starlink_is_announced(tonight):
     names = [announced["name"] for announced in tonight.json()["passes"]]
 
-    assert [name for name in names if "starlink" in name.lower()] == []
+    assert [name for name in names if is_a_starlink_announcement(name)] == []

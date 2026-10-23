@@ -8,7 +8,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import PurePosixPath
 from urllib.parse import parse_qs, urlparse
 
-from tests.support.omm import cut_short, omm_csv_from_tle
+from tests.support.omm import a_line_too_long_to_read, cut_short, omm_csv_from_tle
 
 
 class FakeCelestrak:
@@ -77,6 +77,10 @@ class FakeCelestrak:
             "<html><head><title>Maintenance</title></head>",
             "<body>Back soon.</body></html>",
         )
+
+    def publishes_an_endless_line(self) -> None:
+        """Répond une page web d'un seul tenant, plus longue qu'un champ CSV ne peut l'être."""
+        self.publishes(a_line_too_long_to_read())
 
     def publishes_cut_short(self, catalog: str) -> None:
         """Publie ce catalogue coupé entre deux colonnes de son premier satellite."""
