@@ -5,3 +5,7 @@ export const SKY_UNREACHABLE = "Le ciel est injoignable pour le moment.";
 export const MESSAGE_NOT_SENT = "Ton message n'a pas pu partir : vérifie-le et réessaie.";
 export const TRAIN_EXPLANATION =
   "Une file de points brillants qui se suivent : les satellites Starlink d'un même lancement, quelques jours après leur mise en orbite.";
+export const PLANET_EXPLANATION =
+  "Une planète ne bouge pas en quelques minutes : elle reste au même endroit parmi les étoiles. Si ta lumière filait dans le ciel, c'était plutôt un satellite ou un avion.";
+export const SATELLITES_UNCHECKED =
+  "Le catalogue des satellites est indisponible pour le moment : seules les planètes ont été vérifiées. Réessaie plus tard pour savoir si c'était un satellite.";
