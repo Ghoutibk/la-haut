@@ -4,7 +4,7 @@ from la_haut.domain.orbit_mean_elements import InvalidOrbitMeanElementsError
 from la_haut.domain.starlink import is_starlink
 from la_haut.infrastructure.omm_csv import InvalidOmmCatalogError, parse_omm_csv
 from tests.support.fixtures import LAST_30_DAYS_CSV_2026, VISUAL_CSV_2026
-from tests.support.omm import cut_short
+from tests.support.omm import a_line_too_long_to_read, cut_short
 
 
 def test_the_recent_launches_are_read_with_their_numbers_beyond_99999():
@@ -33,7 +33,7 @@ def test_a_web_page_is_not_a_catalog():
 
 def test_a_line_too_long_to_be_read_is_not_a_catalog():
     with pytest.raises(InvalidOmmCatalogError):
-        parse_omm_csv("<!DOCTYPE html><html><body>" + "x" * 200_000 + "</body></html>\n")
+        parse_omm_csv(a_line_too_long_to_read())
 
 
 def test_a_row_missing_an_element_is_rejected():
