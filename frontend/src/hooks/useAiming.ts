@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent, useState } from "react";
 
 import { type CompassPoint, aimingAt, compassPointOf, headingFrom } from "../lib/compass";
-import { COMPASS_READING, COMPASS_SILENT } from "../lib/texts";
+import { COMPASS_READING, COMPASS_SILENT, NO_COMPASS_ACCESS } from "../lib/texts";
 
 // Sans cap valide dans ce délai, la boussole est abandonnée.
 const COMPASS_PATIENCE_MS = 3000;
@@ -16,6 +16,18 @@ function orientationEvent(): string {
   return "ondeviceorientationabsolute" in window ? "deviceorientationabsolute" : "deviceorientation";
 }
 
+// Safari sur iPhone demande au visiteur l'accès à la boussole ; les autres navigateurs le donnent.
+interface CompassAccess {
+  readonly requestPermission?: () => Promise<string>;
+}
+
+async function compassAccessGranted(): Promise<boolean> {
+  const access: typeof DeviceOrientationEvent & CompassAccess = DeviceOrientationEvent;
+  if (access.requestPermission === undefined) return true;
+  const answer = await access.requestPermission().catch(() => "denied");
+  return answer === "granted";
+}
+
 export interface AimingCallbacks {
   // Le point cardinal visé, en direct, à chaque cap lu.
   readonly onPoint: (point: CompassPoint) => void;
@@ -28,7 +40,7 @@ export interface Aiming {
   readonly active: boolean;
   // Ce que la page dit de la visée : la lecture en cours, puis le point visé.
   readonly reading: string;
-  readonly start: () => void;
+  readonly start: () => Promise<void>;
   readonly stop: () => void;
 }
 
@@ -63,7 +75,11 @@ export function useAiming({ onPoint, onError }: AimingCallbacks): Aiming {
     };
   }, [active]);
 
-  function start() {
+  async function start() {
+    if (!(await compassAccessGranted())) {
+      onError(NO_COMPASS_ACCESS);
+      return;
+    }
     setReading(COMPASS_READING);
     setActive(true);
   }

@@ -16,3 +16,4 @@ export const WRITE_MESSAGE = "Écris ton message avant de l'envoyer.";
 export const COMPASS_READING = "Lecture de la boussole…";
 export const COMPASS_SILENT =
   "La boussole de ton téléphone ne répond pas : choisis la direction toi-même.";
+export const NO_COMPASS_ACCESS = "Sans accès à la boussole, choisis la direction toi-même.";
