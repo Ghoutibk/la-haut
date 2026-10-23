@@ -14,6 +14,26 @@ export default defineConfig(
       globals: globals.browser,
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    rules: {
+      // Un import de type s'écrit à part : le test d'architecture le distingue ainsi.
+      "@typescript-eslint/consistent-type-imports": "error",
+      "@typescript-eslint/no-import-type-side-effects": "error",
+    },
+  },
+  {
+    // La lib reste pure : elle ne touche ni la page ni le navigateur, qu'on lui passe au besoin.
+    files: ["src/lib/**/*.ts"],
+    rules: {
+      "no-restricted-globals": [
+        "error",
+        "window",
+        "document",
+        "navigator",
+        "location",
+        "localStorage",
+        "sessionStorage",
+      ],
+    },
   },
   {
     files: ["*.config.{js,ts}"],
