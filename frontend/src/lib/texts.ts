@@ -9,3 +9,5 @@ export const PLANET_EXPLANATION =
   "Une planète ne bouge pas en quelques minutes : elle reste au même endroit parmi les étoiles. Si ta lumière filait dans le ciel, c'était plutôt un satellite ou un avion.";
 export const SATELLITES_UNCHECKED =
   "Le catalogue des satellites est indisponible pour le moment : seules les planètes ont été vérifiées. Réessaie plus tard pour savoir si c'était un satellite.";
+export const CHOOSE_DIRECTION = "Choisis la direction où tu l'as vue.";
+export const GIVE_TIME = "Indique l'heure à laquelle tu l'as vue.";
