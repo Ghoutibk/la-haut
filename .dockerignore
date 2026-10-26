@@ -1,10 +1,13 @@
-# Seul le paquet est utile à l'image : ni tests, ni environnement local, ni caches.
+# Seuls le paquet et les sources de la page sont utiles à l'image : ni tests, ni environnement
+# local, ni caches. La page se construit dans l'image, jamais depuis la machine.
 .git
 .github
 .venv
 .claude
 tests
 **/__pycache__
+**/node_modules
+src/la_haut/interface/http/static
 **/*.py[cod]
 .pytest_cache
 .ruff_cache
