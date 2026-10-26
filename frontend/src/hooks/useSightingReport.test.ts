@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { A_PASS, LYON, theApiAnswers } from "../testing/doubles";
+import { A_PASS, LYON, theApiAnswers, theApiTakesItsTime } from "../testing/doubles";
 import { useSightingReport } from "./useSightingReport";
 
 const NOW = new Date("2026-10-05T21:30:00+02:00");
@@ -111,11 +111,7 @@ describe("le signalement d'une lumière, vu par la page", () => {
   });
 
   it("patiente pendant la recherche, l'alerte précédente effacée", async () => {
-    let answer: (response: Response) => void = () => undefined;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))),
-    );
+    const answer = theApiTakesItsTime();
     const { result } = reporting();
     await act(() => result.current.submit());
     act(() => {
@@ -130,7 +126,7 @@ describe("le signalement d'une lumière, vu par la page", () => {
     expect(result.current).toMatchObject({ busy: true, alert: "" });
 
     await act(async () => {
-      answer(new Response(JSON.stringify(AN_IDENTIFICATION)));
+      answer(200, AN_IDENTIFICATION);
       await searching;
     });
     expect(result.current.busy).toBe(false);

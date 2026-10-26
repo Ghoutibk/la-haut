@@ -28,3 +28,15 @@ export function theApiAnswers(status: number, body: unknown) {
   vi.stubGlobal("fetch", fetch);
   return fetch;
 }
+
+// L'API ne répond que quand le test le décide, par la fonction rendue.
+export function theApiTakesItsTime(): (status: number, body: unknown) => void {
+  let answer: (response: Response) => void = () => undefined;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(() => new Promise<Response>((resolve) => (answer = resolve))),
+  );
+  return (status, body) => {
+    answer(new Response(JSON.stringify(body), { status }));
+  };
+}
