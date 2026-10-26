@@ -12,3 +12,6 @@ dist/
 
 # Paquets npm de la page (frontend/node_modules)
 node_modules/
+
+# La page construite par Vite depuis frontend/ (npm --prefix frontend run build)
+src/la_haut/interface/http/static/

@@ -88,7 +88,7 @@ def chrome():
 
 
 @pytest.fixture(scope="session")
-def local_site():
+def local_site(built_page):
     with LocalSite() as site:
         yield site
 
