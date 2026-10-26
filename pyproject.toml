@@ -31,7 +31,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-"la_haut.interface.http" = ["static/*"]
+"la_haut.interface.http" = ["static/**/*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src", "."]
