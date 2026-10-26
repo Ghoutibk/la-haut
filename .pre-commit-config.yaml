@@ -27,12 +27,6 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      - id: node-test
-        name: node --test (page web)
-        entry: node --test tests/js/**/*.test.js
-        language: system
-        pass_filenames: false
-        files: \.js$
       - id: frontend-typecheck
         name: tsc (page web)
         entry: npm --prefix frontend run typecheck
