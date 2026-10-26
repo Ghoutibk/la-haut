@@ -48,8 +48,9 @@ Fonctionnalité: Écrire à l'auteur depuis la page
     Et je choisis « <bouton> » parmi « C'est plutôt… »
     Et j'écris « Ajouter les passages de la Lune »
     Et j'envoie mon message
+    Alors l'auteur reçoit <nature> : « Ajouter les passages de la Lune », sans e-mail
+    Quand je touche « Écrire un autre message »
     Alors seul « <bouton> » est choisi parmi « C'est plutôt… »
-    Et l'auteur reçoit <nature> : « Ajouter les passages de la Lune », sans e-mail
 
     Exemples:
       | bouton      | nature      |
