@@ -3,24 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import type { FeedbackDraft } from "../../lib/feedback";
+import { A_DRAFT, aFeedbackForm } from "../../testing/props";
 import { FeedbackForm, type FeedbackFormProps } from "./FeedbackForm";
 
 const MESSAGE = "Ton message";
 const CONTACT = "Ton e-mail, si tu veux une réponse (facultatif)";
-const A_DRAFT: FeedbackDraft = { kind: "idea", message: "", contact: "", website: "" };
+const AN_IDEA: FeedbackDraft = { ...A_DRAFT, kind: "idea" };
 
-function aForm(props: Partial<FeedbackFormProps> = {}) {
-  const { container } = render(
-    <FeedbackForm
-      draft={A_DRAFT}
-      onRevise={vi.fn()}
-      alert=""
-      busy={false}
-      onSend={vi.fn()}
-      hidden={false}
-      {...props}
-    />,
-  );
+function aForm(changes: Partial<FeedbackFormProps> = {}) {
+  const { container } = render(<FeedbackForm {...aFeedbackForm(changes)} />);
   return container.querySelector("form") as HTMLFormElement;
 }
 
@@ -31,7 +22,7 @@ describe("le formulaire « Ton avis »", () => {
 
   it("demande de quelle nature est l'avis", async () => {
     const onRevise = vi.fn();
-    aForm({ onRevise });
+    aForm({ onRevise, draft: AN_IDEA });
     const kinds = screen.getByRole("group", { name: "C'est plutôt…" });
 
     expect(within(kinds).getByRole("button", { name: "Une idée", pressed: true })).toBeVisible();
@@ -42,7 +33,7 @@ describe("le formulaire « Ton avis »", () => {
 
   it("demande le message, et l'e-mail sans l'exiger", () => {
     const onRevise = vi.fn();
-    aForm({ onRevise, draft: { ...A_DRAFT, message: "Merci", contact: "claire@" } });
+    aForm({ onRevise, draft: { ...AN_IDEA, message: "Merci", contact: "claire@" } });
     const message = screen.getByLabelText(MESSAGE);
     const contact = screen.getByLabelText(CONTACT);
 

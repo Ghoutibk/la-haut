@@ -2,27 +2,13 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { aFeedbackDialog } from "../../testing/props";
 import { FeedbackDialog, type FeedbackDialogProps } from "./FeedbackDialog";
 
 const THANKS = "Bien reçu";
 
-function aDialog(props: Partial<FeedbackDialogProps> = {}) {
-  render(
-    <FeedbackDialog
-      open
-      onClose={vi.fn()}
-      thanked={false}
-      onWriteAnother={vi.fn()}
-      form={{
-        draft: { kind: "problem", message: "", contact: "", website: "" },
-        onRevise: vi.fn(),
-        alert: "",
-        busy: false,
-        onSend: vi.fn(),
-      }}
-      {...props}
-    />,
-  );
+function aDialog(changes: Partial<FeedbackDialogProps> = {}) {
+  render(<FeedbackDialog {...aFeedbackDialog(changes)} />);
 }
 
 describe("la fenêtre d'avis", () => {

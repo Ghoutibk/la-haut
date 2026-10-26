@@ -2,37 +2,14 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { COMPASS_ROSE } from "../../lib/compass";
 import type { SightingMoment } from "../../lib/sighting";
+import { aSightingForm } from "../../testing/props";
 import { SightingForm, type SightingFormProps } from "./SightingForm";
 
 const EARLIER_LABEL = "Heure à laquelle tu l'as vue";
 
-function aForm(props: Partial<SightingFormProps> = {}) {
-  const { container } = render(
-    <SightingForm
-      moment="now"
-      onMoment={vi.fn()}
-      earlier=""
-      onEarlier={vi.fn()}
-      direction={{
-        rose: COMPASS_ROSE,
-        chosen: null,
-        onChoose: vi.fn(),
-        aiming: {
-          available: false,
-          active: false,
-          reading: "",
-          onStart: vi.fn(),
-          onDone: vi.fn(),
-        },
-      }}
-      alert=""
-      busy={false}
-      onSubmit={vi.fn()}
-      {...props}
-    />,
-  );
+function aForm(changes: Partial<SightingFormProps> = {}) {
+  const { container } = render(<SightingForm {...aSightingForm(changes)} />);
   return container.querySelector("form") as HTMLFormElement;
 }
 

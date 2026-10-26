@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { VIEW_ANCHORS } from "../../lib/route";
+import { aFeedbackDialog } from "../../testing/props";
 import { MobileShell } from "./MobileShell";
 
 describe("la page sur un téléphone", () => {
@@ -10,19 +11,7 @@ describe("la page sur un téléphone", () => {
       <MobileShell
         topBar={{ place: "Paris", onFeedback: vi.fn() }}
         tabBar={{ anchors: VIEW_ANCHORS, current: "tonight" }}
-        feedback={{
-          open: false,
-          onClose: vi.fn(),
-          thanked: false,
-          onWriteAnother: vi.fn(),
-          form: {
-            draft: { kind: "problem", message: "", contact: "", website: "" },
-            onRevise: vi.fn(),
-            alert: "",
-            busy: false,
-            onSend: vi.fn(),
-          },
-        }}
+        feedback={aFeedbackDialog({ open: false })}
       >
         <p>Les vues</p>
       </MobileShell>,

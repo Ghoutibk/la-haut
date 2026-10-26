@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { COMPASS_ROSE } from "../../lib/compass";
+import { aDirectionPicker, anAiming } from "../../testing/props";
 import { type AimingProps, DirectionPicker } from "./DirectionPicker";
 
 const AIM = "Viser avec mon téléphone";
@@ -10,19 +10,7 @@ const OR_CHOOSE = "Ou choisis la direction toi-même :";
 
 function aPicker(aiming: Partial<AimingProps> = {}, onChoose = vi.fn()) {
   render(
-    <DirectionPicker
-      rose={COMPASS_ROSE}
-      chosen="N"
-      onChoose={onChoose}
-      aiming={{
-        available: false,
-        active: false,
-        reading: "Lecture de la boussole…",
-        onStart: vi.fn(),
-        onDone: vi.fn(),
-        ...aiming,
-      }}
-    />,
+    <DirectionPicker {...aDirectionPicker({ chosen: "N", onChoose, aiming: anAiming(aiming) })} />,
   );
   return screen.getByRole("group", { name: "Dans quelle direction ?" });
 }
