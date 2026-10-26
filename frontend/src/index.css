@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Les couleurs de la nuit et les polices de Là-haut. */
+@theme {
+  --color-night: #07090f;
+  --color-surface: #121621;
+  --color-surface-deep: #0b0e15;
+  --color-line: #262c3b;
+  --color-line-soft: #1a1f2d;
+  --color-text: #eef0f4;
+  --color-text-soft: #c9cfda;
+  --color-text-muted: #9aa3b2;
+  --color-accent: #f2c46d;
+  --color-on-accent: #1a1306;
+  --color-sky-blue: #8ec5ff;
+  --color-error: #ffb4a8;
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Geist", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  :root {
+    /* La barre des onglets, que le bas de la page laisse libre. */
+    --tabs-height: 64px;
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-night font-sans text-base/normal text-text antialiased;
+  }
+
+  :is(button, a, input):focus-visible {
+    outline: 2px solid var(--color-sky-blue);
+    outline-offset: 2px;
+  }
+}
