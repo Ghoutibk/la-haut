@@ -1,23 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { aScreen, anAndroidPhone, theOrientationIs } from "../testing/phone";
 import { type AimingCallbacks, useAiming } from "./useAiming";
 
 // jsdom connaît l'événement d'orientation ; un téléphone sans boussole, lui, ne le connaît pas.
 const ORIENTATION_EVENT = Object.getOwnPropertyDescriptor(window, "DeviceOrientationEvent");
 
-function aScreen(pointer: "coarse" | "fine") {
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: query === `(pointer: ${pointer})` }));
-}
-
 function withoutCompass() {
   Reflect.deleteProperty(window, "DeviceOrientationEvent");
-}
-
-// Chrome sur Android annonce l'orientation absolue par son propre événement.
-function anAndroidPhone() {
-  aScreen("coarse");
-  vi.stubGlobal("ondeviceorientationabsolute", null);
 }
 
 // Safari sur iPhone demande au visiteur l'accès à la boussole, puis donne le cap directement.
@@ -36,12 +27,6 @@ function theIphoneCompassReads(heading: number) {
   Object.defineProperty(event, "webkitCompassHeading", { value: heading });
   act(() => {
     window.dispatchEvent(event);
-  });
-}
-
-function theOrientationIs(type: string, init: DeviceOrientationEventInit) {
-  act(() => {
-    window.dispatchEvent(new DeviceOrientationEvent(type, init));
   });
 }
 
