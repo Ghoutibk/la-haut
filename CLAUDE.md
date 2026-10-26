@@ -1,6 +1,6 @@
 # Là-haut : règles de travail
 
-Là-haut dit quels satellites passent au-dessus de toi ce soir et répond à « c'était quoi, cette lumière ? ». Le cœur est en Python ; le site est servi par FastAPI avec une page HTML/CSS/JS sans framework. Le README décrit l'architecture, le langage omniprésent et les routes : lis-le avant de commencer.
+Là-haut dit quels satellites passent au-dessus de toi ce soir et répond à « c'était quoi, cette lumière ? ». Le cœur est en Python ; le site est servi par FastAPI avec une page React, TypeScript et Tailwind, construite par Vite depuis `frontend/`. Le README décrit l'architecture, le langage omniprésent et les routes : lis-le avant de commencer.
 
 ## Identité et attribution (non négociable)
 
@@ -13,14 +13,16 @@ Là-haut dit quels satellites passent au-dessus de toi ce soir et répond à « 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+npm --prefix frontend ci
 pre-commit install
 python -m pytest
-node --test 'tests/js/**/*.test.js'
+npm --prefix frontend test
+npm --prefix frontend run build
 ```
 
 - Active toujours `.venv` avant de committer : les hooks pre-commit lancent `ruff` et `pytest` depuis le PATH.
 - Le hook `commit-msg` refuse tout message qui ne suit pas Conventional Commits.
-- La logique de la page (JavaScript sans framework) se teste avec le lanceur intégré de Node, dans `tests/js` : garde-la dans des modules purs, sans le DOM. Le hook pre-commit lance ces tests dès qu'un fichier `.js` change.
+- La logique de la page se teste avec Vitest, à côté de chaque module de `frontend/src` : garde-la dans la `lib`, en modules purs, sans React ni le DOM. Le hook pre-commit lance typecheck, lint et Vitest dès qu'un fichier de `frontend/` change ; `pytest` construit la page (`npm --prefix frontend run build`) quand elle manque ou date d'avant ses sources.
 - Les tests ne touchent jamais le réseau. CelesTrak est simulé par `tests/support/fake_celestrak.py` ; les éphémérides DE421 sont embarquées (paquet `skyfield-data`).
 
 ## Règles d'ingénierie
