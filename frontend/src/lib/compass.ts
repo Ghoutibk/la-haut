@@ -78,6 +78,8 @@ function roseChoice(point: CompassPoint): RoseChoice {
 }
 
 // La rose des vents vue depuis l'observateur, le nord en haut, ligne par ligne.
-export const COMPASS_ROSE: readonly (readonly (RoseChoice | typeof OBSERVER)[])[] = ROSE_LAYOUT.map(
+export type RoseLayout = readonly (readonly (RoseChoice | typeof OBSERVER)[])[];
+
+export const COMPASS_ROSE: RoseLayout = ROSE_LAYOUT.map(
   (row) => row.map((cell) => (cell === OBSERVER ? OBSERVER : roseChoice(cell))),
 );

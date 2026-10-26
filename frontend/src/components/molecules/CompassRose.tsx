@@ -1,10 +1,10 @@
 import { ChoiceButton } from "../atoms/buttons";
 import { ObserverMarker } from "../atoms/ObserverMarker";
-import type { CompassPoint, OBSERVER, RoseChoice } from "../../lib/compass";
+import type { CompassPoint, RoseLayout } from "../../lib/compass";
 
 interface CompassRoseProps {
   // La rose ligne par ligne, le nord en haut et le visiteur au milieu.
-  readonly rose: readonly (readonly (RoseChoice | typeof OBSERVER)[])[];
+  readonly rose: RoseLayout;
   readonly chosen: CompassPoint | null;
   readonly onChoose: (point: CompassPoint) => void;
 }
