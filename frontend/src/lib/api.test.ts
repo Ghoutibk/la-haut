@@ -1,29 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { A_PASS, LYON, theApiAnswers } from "../testing/doubles";
 import { failureMessage, identify, searchPasses, sendFeedback } from "./api";
-import type { Observer } from "./observer";
-
-const LYON: Observer = { latitude: 45.76, longitude: 4.84, label: "Ta position" };
-const A_PASS = {
-  kind: "satellite",
-  name: "Station spatiale chinoise Tiangong",
-  starts_at: "2026-10-05T21:42:00+02:00",
-  ends_at: "2026-10-05T21:46:00+02:00",
-  duration_s: 240,
-  appears_in: { code: "S", label: "sud" },
-  vanishes_in: { code: "E", label: "est" },
-  max_elevation_deg: 17,
-};
-
-function theApiAnswers(status: number, body: unknown) {
-  const fetch = vi.fn(() =>
-    Promise.resolve(
-      new Response(typeof body === "string" ? body : JSON.stringify(body), { status }),
-    ),
-  );
-  vi.stubGlobal("fetch", fetch);
-  return fetch;
-}
 
 describe("les appels à l'API de Là-haut", () => {
   afterEach(() => {
