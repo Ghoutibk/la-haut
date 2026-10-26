@@ -15,17 +15,23 @@ Les deux sont accessibles sur un site web : une page mobile avec les onglets « 
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
+npm --prefix frontend ci
 pre-commit install
 pytest
+npm --prefix frontend test
 ```
+
+La page est en React, TypeScript strict et Tailwind, dans `frontend/` (Node 20 ou plus). `pytest` la construit lui-même quand elle manque ou date d'avant ses sources.
+Les scénarios de la page pilotent le Google Chrome de la machine ; là où il ne s'installe pas, la variable `LA_HAUT_BROWSER_EXECUTABLE` désigne un Chromium à piloter à sa place.
 
 ## Lancer le site
 
 ```bash
+npm --prefix frontend run build
 uvicorn --factory la_haut.composition:build_web_app --reload
 ```
 
-Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.csv`, à côté de `last-30-days.csv` ; la variable d'environnement `LA_HAUT_CACHE` permet de déplacer les deux. `LA_HAUT_CATALOG_URL` change la source des catalogues : une adresse où `{group}` est remplacé par le nom du groupe, CelesTrak par défaut.
+Vite construit la page dans `src/la_haut/interface/http/static`, que git ignore : le site la sert de là, sous `/static`. Puis ouvre http://127.0.0.1:8000. La page demande ta position et se replie sur Paris si tu refuses ou ne réponds pas. Le cache CelesTrak se trouve dans `~/.cache/la-haut/visual.csv`, à côté de `last-30-days.csv` ; la variable d'environnement `LA_HAUT_CACHE` permet de déplacer les deux. `LA_HAUT_CATALOG_URL` change la source des catalogues : une adresse où `{group}` est remplacé par le nom du groupe, CelesTrak par défaut.
 
 | Route | Rôle |
 |---|---|
@@ -42,7 +48,7 @@ docker build -t la-haut .
 docker run --rm -p 8000:8000 la-haut
 ```
 
-L'image (Python 3.13 slim) tourne sous un utilisateur non root, écoute sur le port donné par `$PORT` (8000 par défaut) et garde ses catalogues CelesTrak dans `/tmp/la-haut`.
+L'image construit la page dans une première étape Node 24, puis n'en garde que les fichiers construits : l'image finale (Python 3.13 slim) est purement Python. Elle tourne sous un utilisateur non root, écoute sur le port donné par `$PORT` (8000 par défaut) et garde ses catalogues CelesTrak dans `/tmp/la-haut`.
 
 ## Mettre en ligne
 
@@ -92,7 +98,15 @@ src/la_haut/
 ├── infrastructure/  adaptateurs : Skyfield (satellites et planètes), fichier TLE, CSV OMM, téléchargement CelesTrak
 ├── interface/       API HTTP (FastAPI) et page web, branchées sur les cas d'usage seulement
 └── composition.py   racine de composition : branche les adaptateurs sur les cas d'usage
+
+frontend/src/        la page : React, TypeScript strict et Tailwind, construite par Vite
+├── lib/             le langage de la page, sans React ni navigateur : boussole, textes, appels à l'API
+├── hooks/           l'état de la page : vue de l'ancre, position, passages, visée, signalement, avis
+├── components/      atomic design : atoms, molecules, organisms, templates, pages
+└── App.tsx          racine de composition de la page
 ```
+
+Côté page, les dépendances descendent aussi : la `lib` ne connaît ni React ni les composants, et chaque niveau de l'atomic design n'utilise que les niveaux en dessous. La règle est vérifiée par `frontend/src/architecture.test.ts`.
 
 ## Langage omniprésent
 
@@ -105,11 +119,13 @@ src/la_haut/
 | Éléments orbitaux moyens | `OrbitMeanElements` | L'orbite au format OMM du CCSDS, telle que CelesTrak la publie, champ par champ vérifié ; accepte les numéros NORAD au-delà de 99999 |
 | Échantillon de ciel | `SkySample` | Où se trouve le satellite à un instant, éclairé ou non |
 | Point cardinal | `CompassPoint` | Une des huit directions de la rose des vents |
-| Visée | `compass.js` : `headingFrom`, `compassPointOf` | Le cap vers lequel pointe le haut du téléphone tenu à plat, rangé dans les mêmes huit secteurs que `CompassPoint` |
+| Visée | `lib/compass.ts` : `headingFrom`, `compassPointOf` | Le cap vers lequel pointe le haut du téléphone tenu à plat, rangé dans les mêmes huit secteurs que `CompassPoint` |
 | Visibilité à l'œil nu | `NakedEyeVisibility` | Éclairé par le Soleil, à 10° ou plus, Soleil à −6° ou moins |
 | Passage visible | `VisiblePass` | De l'apparition à la disparition, avec les directions |
 | Satellite célèbre | `is_famous`, `FamousSatelliteCatalog` | ISS, Tiangong ou Hubble, reconnus à leur numéro NORAD : les seuls annoncés pour l'instant |
 | Signalement | `Sighting` | « J'ai vu une lumière à telle heure, dans telle direction » |
+| Signalement en cours | `lib/sighting.ts` : `SightingReport`, `checkSighting` | Ce que le visiteur a rempli sur la page : le moment, l'heure s'il l'a vue plus tôt, la direction ; vérifié la direction d'abord, puis l'heure |
+| Rose des vents | `lib/compass.ts` : `COMPASS_ROSE`, `RoseLayout` | Les huit directions autour du visiteur, le nord en haut, abrégées et nommées en toutes lettres |
 | Directions voisines | `CompassPoint.is_close_to` | Le même point cardinal ou l'un de ses deux voisins : une direction donnée à l'œil |
 | Écart au signalement | `VisiblePass.gap_to` | Temps entre le signalement et le moment où le passage était dans cette direction, à 5 minutes près |
 | Objets amarrés | `docked_with`, `merge_docked_passes` | Passages qui coïncident à 30 s et 1° près : un seul point lumineux, un seul passage annoncé |
@@ -133,6 +149,7 @@ src/la_haut/
 | Satellites vérifiés | `Identification.satellites_checked` | Faux quand le catalogue des satellites manquait : seules les planètes ont été cherchées, et la page le dit |
 | Avis | `Feedback` | Un message d'un visiteur à l'auteur du site, avec son e-mail facultatif pour une réponse |
 | Nature de l'avis | `FeedbackKind` | Un problème, une idée ou autre chose |
+| Brouillon d'avis | `lib/feedback.ts` : `FeedbackDraft`, `checkFeedback` | L'avis tel que le visiteur l'écrit dans la fenêtre, vérifié avant de partir |
 | Boîte à avis | `FeedbackInbox` | Port : là où l'avis est remis ; en ligne, les tickets du dépôt privé |
 | Plafond horaire | `MAX_FEEDBACK_PER_HOUR` | Au plus 20 avis remis par heure, contre les envois en masse |
 | Délai avant nouvel essai | `CELESTRAK_RETRY_DELAY` | Après un téléchargement raté, le temps pendant lequel CelesTrak n'est pas redemandé |
@@ -144,8 +161,8 @@ src/la_haut/
 |---|---|---|---|
 | Unitaires | 80 % | `tests/unit` | Domaine et cas d'usage, avec des doublures des ports |
 | Intégration | 13 % | `tests/integration` | Adaptateurs branchés sur Skyfield et sur de vrais fichiers |
-| Fonctionnels | 7 % | `tests/functional` | Scénarios Gherkin en français, de bout en bout |
-| Page web | hors pyramide | `tests/js` | La logique de la page sans le navigateur, avec le lanceur de tests de Node : `node --test 'tests/js/**/*.test.js'` |
+| Fonctionnels | 7 % | `tests/functional` | Scénarios Gherkin en français, de bout en bout ; ceux de `tests/functional/page` pilotent la page dans Google Chrome avec Playwright |
+| Page web | hors pyramide | `frontend/src/**/*.test.ts(x)` | La `lib`, les hooks et les composants de la page dans jsdom, avec Vitest et Testing Library : `npm --prefix frontend test` |
 
 La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référence astronomiques viennent de calculs Skyfield indépendants de nos adaptateurs, sur un vrai TLE de l'ISS et sur les vrais catalogues CelesTrak du 6 octobre 2026 (`tests/support/celestrak`). Les builders et doublures partagés sont dans `tests/support`.
 
@@ -166,4 +183,3 @@ La répartition s'affiche à la fin de chaque `pytest`. Les valeurs de référen
 - « C'était quoi, ça ? » reconnaît les satellites suivis, les trains Starlink et quatre planètes. Un avion ou une étoile donnent « ni satellite ni planète ». Mercure, la Lune et les étoiles brillantes ne sont pas proposées.
 - L'aspect de la lumière (un point, une file, un clignotement) n'est pas encore utilisé : une file de points vue au même endroit qu'une planète donne d'abord le satellite, puis la planète.
 - Une planète est proposée dès que le Soleil est à −6° ou moins, même si Vénus se voit parfois plus tôt au crépuscule.
-- Le JavaScript de la page n'a pas de tests automatisés : sa logique est volontairement réduite à l'affichage, le reste est testé côté Python.

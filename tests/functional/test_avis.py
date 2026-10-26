@@ -29,7 +29,7 @@ def github():
 
 
 @pytest.fixture
-def site(celestrak, cache_path, github):
+def site(celestrak, cache_path, github, built_page):
     """Le site assemblé comme en ligne, avec les réglages d'avis donnés par le scénario."""
     return TestClient(
         build_web_app(cache_path, url_template=celestrak.url_template, feedback_api_url=github.url)

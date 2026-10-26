@@ -27,9 +27,21 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      - id: node-test
-        name: node --test (page web)
-        entry: node --test tests/js/**/*.test.js
+      - id: frontend-typecheck
+        name: tsc (page web)
+        entry: npm --prefix frontend run typecheck
         language: system
         pass_filenames: false
-        files: \.js$
+        files: ^frontend/
+      - id: frontend-lint
+        name: eslint (page web)
+        entry: npm --prefix frontend run lint
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+      - id: frontend-test
+        name: vitest (page web)
+        entry: npm --prefix frontend test
+        language: system
+        pass_filenames: false
+        files: ^frontend/

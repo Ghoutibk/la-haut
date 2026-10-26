@@ -28,25 +28,35 @@ from tests.support.fakes import (
     UnavailableSatelliteCatalog,
 )
 from tests.support.fixtures import PARIS_LATITUDE_DEG, PARIS_LONGITUDE_DEG
+from tests.support.static_page import A_SCRIPT
 
 PARIS = {"latitude": PARIS_LATITUDE_DEG, "longitude": PARIS_LONGITUDE_DEG}
 WEST = {"azimuth_deg": 270.0}
 
 
-def a_client(tracks_by_name, tracker=None, planets=()):
-    tracker = tracker or FakeSkyTracker(tracks_by_name)
-    satellites = [a_satellite(name) for name in tracks_by_name]
-    list_visible_passes = ListVisiblePasses(
-        catalog=FakeSatelliteCatalog(satellites), tracker=tracker
-    )
-    identify_sighting = IdentifySightingWithPlanets(
-        IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
-    )
-    app = create_app(list_visible_passes, identify_sighting, clock=lambda: DEFAULT_INSTANT)
-    return TestClient(app)
+@pytest.fixture
+def a_client(static_dir):
+    def client(tracks_by_name, tracker=None, planets=()):
+        tracker = tracker or FakeSkyTracker(tracks_by_name)
+        satellites = [a_satellite(name) for name in tracks_by_name]
+        list_visible_passes = ListVisiblePasses(
+            catalog=FakeSatelliteCatalog(satellites), tracker=tracker
+        )
+        identify_sighting = IdentifySightingWithPlanets(
+            IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
+        )
+        app = create_app(
+            list_visible_passes,
+            identify_sighting,
+            clock=lambda: DEFAULT_INSTANT,
+            static_dir=static_dir,
+        )
+        return TestClient(app)
+
+    return client
 
 
-def test_tonight_lists_the_visible_passes_over_the_observer():
+def test_tonight_lists_the_visible_passes_over_the_observer(a_client):
     response = a_client({"ISS (ZARYA)": a_track({}, {}, {})}).get("/api/passes", params=PARIS)
 
     assert response.status_code == 200
@@ -57,7 +67,7 @@ def test_tonight_lists_the_visible_passes_over_the_observer():
     )
 
 
-def test_tonight_searches_the_next_twelve_hours_by_default():
+def test_tonight_searches_the_next_twelve_hours_by_default(a_client):
     tracker = FakeSkyTracker({})
 
     a_client({"ISS (ZARYA)": []}, tracker=tracker).get("/api/passes", params=PARIS)
@@ -76,13 +86,13 @@ def test_tonight_searches_the_next_twelve_hours_by_default():
         {"latitude": PARIS_LATITUDE_DEG},
     ],
 )
-def test_tonight_rejects_an_impossible_request(params):
+def test_tonight_rejects_an_impossible_request(params, a_client):
     response = a_client({}).get("/api/passes", params=params)
 
     assert response.status_code == 422
 
 
-def test_a_sighting_is_identified_over_http():
+def test_a_sighting_is_identified_over_http(a_client):
     seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
 
     response = a_client({"ISS (ZARYA)": a_track(WEST, WEST, WEST)}).get(
@@ -94,7 +104,7 @@ def test_a_sighting_is_identified_over_http():
     assert candidate["satellite"] == "ISS (ZARYA)"
 
 
-def test_each_candidate_says_whether_it_is_a_satellite_or_a_planet():
+def test_each_candidate_says_whether_it_is_a_satellite_or_a_planet(a_client):
     seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
     venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=270.0)
 
@@ -107,7 +117,7 @@ def test_each_candidate_says_whether_it_is_a_satellite_or_a_planet():
     assert (planet["kind"], planet["name"]) == ("planet", "Vénus")
 
 
-def test_a_sighting_matching_no_satellite_gives_no_candidate():
+def test_a_sighting_matching_no_satellite_gives_no_candidate(a_client):
     seen = {**PARIS, "at": DEFAULT_INSTANT.isoformat(), "direction": "N"}
 
     response = a_client({"ISS (ZARYA)": a_track(WEST, WEST)}).get(
@@ -125,30 +135,36 @@ def test_a_sighting_matching_no_satellite_gives_no_candidate():
         {**PARIS, "direction": "W"},
     ],
 )
-def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen):
+def test_an_incomplete_or_ambiguous_sighting_is_rejected(seen, a_client_without_catalog, a_client):
     response = a_client({}).get("/api/identification", params=seen)
 
     assert response.status_code == 422
 
 
-def a_client_without_catalog(planets=()):
-    list_visible_passes = ListVisiblePasses(
-        catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
-    )
-    identify_sighting = IdentifySightingWithPlanets(
-        IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
-    )
-    return TestClient(create_app(list_visible_passes, identify_sighting))
+@pytest.fixture
+def a_client_without_catalog(static_dir):
+    def client(planets=()):
+        list_visible_passes = ListVisiblePasses(
+            catalog=UnavailableSatelliteCatalog(), tracker=FakeSkyTracker({})
+        )
+        identify_sighting = IdentifySightingWithPlanets(
+            IdentifySighting(list_visible_passes), FakePlanetLocator(list(planets))
+        )
+        return TestClient(create_app(list_visible_passes, identify_sighting, static_dir=static_dir))
+
+    return client
 
 
-def test_the_api_says_so_when_no_catalog_is_available():
+def test_the_api_says_so_when_no_catalog_is_available(a_client_without_catalog):
     response = a_client_without_catalog().get("/api/passes", params=PARIS)
 
     assert response.status_code == 503
     assert "catalogue" in response.json()["detail"]
 
 
-def test_without_catalog_the_planets_answer_and_the_api_says_the_satellites_were_not_checked():
+def test_without_catalog_the_planets_answer_and_the_api_says_the_satellites_were_not_checked(
+    a_client_without_catalog,
+):
     seen = {**PARIS, "at": (DEFAULT_INSTANT + ONE_MINUTE).isoformat(), "direction": "W"}
     venus = a_planet_position(planet=Planet.VENUS, azimuth_deg=270.0)
 
@@ -162,14 +178,14 @@ def test_without_catalog_the_planets_answer_and_the_api_says_the_satellites_were
     )
 
 
-def test_the_health_check_answers_without_computing_anything():
+def test_the_health_check_answers_without_computing_anything(a_client_without_catalog):
     response = a_client_without_catalog().get("/health")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
 
-def test_the_web_page_is_served_at_the_root():
+def test_the_web_page_is_served_at_the_root(a_client):
     response = a_client({}).get("/")
 
     assert response.status_code == 200
@@ -177,16 +193,22 @@ def test_the_web_page_is_served_at_the_root():
     assert "Là-haut" in response.text
 
 
-@pytest.mark.parametrize("asset", ["/static/app.js", "/static/compass.js", "/static/style.css"])
-def test_the_page_assets_are_served(asset):
-    assert a_client({}).get(asset).status_code == 200
+def test_the_page_scripts_are_served_under_static_as_javascript(a_client):
+    response = a_client({}).get(f"/static/{A_SCRIPT}")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/javascript")
 
 
-@pytest.mark.parametrize("module", ["/static/app.js", "/static/compass.js"])
-def test_the_page_scripts_are_served_as_javascript_modules_require(module):
-    content_type = a_client({}).get(module).headers["content-type"]
+def test_the_site_refuses_to_start_without_its_page(tmp_path, a_feedback_client):
+    list_visible_passes = ListVisiblePasses(
+        catalog=FakeSatelliteCatalog([]), tracker=FakeSkyTracker({})
+    )
 
-    assert content_type.startswith("text/javascript")
+    with pytest.raises(RuntimeError):
+        create_app(
+            list_visible_passes, IdentifySighting(list_visible_passes), static_dir=tmp_path / "x"
+        )
 
 
 A_PROBLEM = {
@@ -196,20 +218,29 @@ A_PROBLEM = {
 }
 
 
-def a_feedback_client(inbox, max_per_hour=20):
-    list_visible_passes = ListVisiblePasses(
-        catalog=FakeSatelliteCatalog([]), tracker=FakeSkyTracker({})
-    )
-    identify_sighting = IdentifySightingWithPlanets(
-        IdentifySighting(list_visible_passes), FakePlanetLocator([])
-    )
-    send_feedback = SendFeedback(inbox, max_per_hour=max_per_hour)
-    return TestClient(
-        create_app(list_visible_passes, identify_sighting, send_feedback=send_feedback)
-    )
+@pytest.fixture
+def a_feedback_client(static_dir):
+    def client(inbox, max_per_hour=20):
+        list_visible_passes = ListVisiblePasses(
+            catalog=FakeSatelliteCatalog([]), tracker=FakeSkyTracker({})
+        )
+        identify_sighting = IdentifySightingWithPlanets(
+            IdentifySighting(list_visible_passes), FakePlanetLocator([])
+        )
+        send_feedback = SendFeedback(inbox, max_per_hour=max_per_hour)
+        return TestClient(
+            create_app(
+                list_visible_passes,
+                identify_sighting,
+                send_feedback=send_feedback,
+                static_dir=static_dir,
+            )
+        )
+
+    return client
 
 
-def test_a_feedback_is_sent_over_http():
+def test_a_feedback_is_sent_over_http(a_feedback_client):
     inbox = FakeFeedbackInbox()
 
     response = a_feedback_client(inbox).post("/api/feedback", json=A_PROBLEM)
@@ -223,7 +254,7 @@ def test_a_feedback_is_sent_over_http():
     )
 
 
-def test_an_empty_feedback_is_refused_with_a_reason_the_page_can_show():
+def test_an_empty_feedback_is_refused_with_a_reason_the_page_can_show(a_feedback_client):
     response = a_feedback_client(FakeFeedbackInbox()).post(
         "/api/feedback", json={**A_PROBLEM, "message": "  "}
     )
@@ -232,7 +263,7 @@ def test_an_empty_feedback_is_refused_with_a_reason_the_page_can_show():
     assert response.json() == {"detail": "Écris ton message avant de l'envoyer."}
 
 
-def test_an_unknown_kind_of_feedback_is_refused():
+def test_an_unknown_kind_of_feedback_is_refused(a_feedback_client):
     response = a_feedback_client(FakeFeedbackInbox()).post(
         "/api/feedback", json={**A_PROBLEM, "kind": "spam"}
     )
@@ -240,7 +271,7 @@ def test_an_unknown_kind_of_feedback_is_refused():
     assert response.status_code == 422
 
 
-def test_a_robot_filling_the_hidden_field_is_told_it_worked_but_nothing_is_sent():
+def test_a_robot_filling_the_hidden_field_is_told_it_worked_but_nothing_is_sent(a_feedback_client):
     inbox = FakeFeedbackInbox()
 
     response = a_feedback_client(inbox).post(
@@ -251,21 +282,21 @@ def test_a_robot_filling_the_hidden_field_is_told_it_worked_but_nothing_is_sent(
     assert inbox.delivered == []
 
 
-def test_the_api_says_so_when_the_feedback_inbox_is_unavailable():
+def test_the_api_says_so_when_the_feedback_inbox_is_unavailable(a_feedback_client):
     response = a_feedback_client(UnavailableFeedbackInbox()).post("/api/feedback", json=A_PROBLEM)
 
     assert response.status_code == 503
     assert "avis" in response.json()["detail"]
 
 
-def test_the_api_tells_apart_a_feedback_inbox_that_is_not_configured():
+def test_the_api_tells_apart_a_feedback_inbox_that_is_not_configured(a_feedback_client):
     response = a_feedback_client(NotConfiguredFeedbackInbox()).post("/api/feedback", json=A_PROBLEM)
 
     assert response.status_code == 503
     assert "pas encore configuré" in response.json()["detail"]
 
 
-def test_the_api_asks_to_wait_when_too_much_feedback_came_in_the_hour():
+def test_the_api_asks_to_wait_when_too_much_feedback_came_in_the_hour(a_feedback_client):
     client = a_feedback_client(FakeFeedbackInbox(), max_per_hour=1)
     client.post("/api/feedback", json=A_PROBLEM)
 
@@ -274,7 +305,7 @@ def test_the_api_asks_to_wait_when_too_much_feedback_came_in_the_hour():
     assert response.status_code == 429
 
 
-def test_without_feedback_inbox_the_api_says_feedback_is_unavailable():
+def test_without_feedback_inbox_the_api_says_feedback_is_unavailable(a_client):
     response = a_client({}).post("/api/feedback", json=A_PROBLEM)
 
     assert response.status_code == 503

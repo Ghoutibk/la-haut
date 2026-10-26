@@ -2,6 +2,25 @@
 
 from collections import Counter
 
+import pytest
+
+from tests.support import built_page as page
+from tests.support.static_page import a_static_dir
+
+
+@pytest.fixture
+def static_dir(tmp_path):
+    """Le dossier d'une page factice, servi par le site sous /static."""
+    return a_static_dir(tmp_path / "static")
+
+
+@pytest.fixture(scope="session")
+def built_page():
+    """La vraie page, construite une fois par session si elle manque ou date d'avant ses sources."""
+    if page.is_stale():
+        page.build()
+
+
 PYRAMID_TARGETS = {"unit": 80, "integration": 13, "functional": 7}
 
 

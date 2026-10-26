@@ -29,6 +29,8 @@ from la_haut.infrastructure.skyfield_sky_tracker import SkyfieldSkyTracker
 from la_haut.infrastructure.tle_file_satellite_catalog import TleFileSatelliteCatalog
 from la_haut.interface.http.app import create_app
 
+# La page construite par Vite depuis frontend/, rangée dans le paquet.
+STATIC_DIR = Path(__file__).parent / "interface" / "http" / "static"
 DEFAULT_CACHE_PATH = Path.home() / ".cache" / "la-haut" / "visual.csv"
 # Les lancements des 30 derniers jours : les Starlink qui défilent encore en train.
 RECENT_LAUNCHES_GROUP = "last-30-days"
@@ -130,4 +132,5 @@ def build_web_app(
         ListVisiblePassesBySlot(list_visible_passes),
         _identify_sighting(list_visible_passes),
         send_feedback=send_feedback,
+        static_dir=STATIC_DIR,
     )

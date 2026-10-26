@@ -64,6 +64,7 @@ def test_a_sighting_is_identified_among_the_famous_satellites_from_celestrak(tmp
     assert best.satellite_name == ISS_NAME
 
 
+@pytest.mark.usefixtures("built_page")
 def test_the_web_app_is_assembled_on_the_celestrak_catalog(tmp_path):
     with FakeCelestrak() as celestrak:
         app = build_web_app(tmp_path / "visual.csv", url_template=celestrak.url_template)
@@ -104,6 +105,7 @@ def test_a_planet_is_identified_when_no_famous_satellite_was_there(tmp_path):
     assert candidate.planet == Planet.VENUS
 
 
+@pytest.mark.usefixtures("built_page")
 def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment(
     tmp_path, monkeypatch
 ):
@@ -130,6 +132,7 @@ def test_the_web_app_reads_the_catalogs_from_the_source_named_in_its_environment
 A_PROBLEM = {"kind": "problem", "message": "La boussole ne bouge pas"}
 
 
+@pytest.mark.usefixtures("built_page")
 def test_the_web_app_sends_feedback_to_the_repository_named_in_its_environment(
     tmp_path, monkeypatch
 ):
