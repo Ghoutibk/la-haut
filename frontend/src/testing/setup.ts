@@ -14,3 +14,8 @@ HTMLDialogElement.prototype.close = function close(this: HTMLDialogElement) {
   this.open = false;
   this.dispatchEvent(new Event("close"));
 };
+
+// jsdom ne sait rien de l'écran : par défaut, celui d'un ordinateur, avec une souris.
+window.matchMedia = ((query: string) => ({
+  matches: query === "(pointer: fine)",
+})) as unknown as typeof window.matchMedia;
