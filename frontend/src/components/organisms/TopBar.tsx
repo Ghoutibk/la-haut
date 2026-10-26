@@ -2,7 +2,7 @@ import { Brand } from "../molecules/Brand";
 import { FeedbackButton } from "../molecules/FeedbackButton";
 import { PlaceChip } from "../molecules/PlaceChip";
 
-interface TopBarProps {
+export interface TopBarProps {
   readonly place: string;
   readonly onFeedback: () => void;
 }

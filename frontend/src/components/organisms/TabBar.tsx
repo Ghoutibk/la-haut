@@ -9,7 +9,7 @@ const TABS: readonly { view: View; label: string; icon: ReactNode }[] = [
   { view: "sighting", label: "C'était quoi ?", icon: <TargetIcon /> },
 ];
 
-interface TabBarProps {
+export interface TabBarProps {
   readonly anchors: Readonly<Record<View, string>>;
   readonly current: View;
 }
