@@ -29,7 +29,6 @@ Latitude = Annotated[float, Query(ge=-90, le=90)]
 Longitude = Annotated[float, Query(ge=-180, le=180)]
 DEFAULT_HOURS_AHEAD = 12
 MAX_HOURS_AHEAD = 48
-STATIC_DIR = Path(__file__).parent / "static"
 
 
 # Garde-fou de transport : le domaine fixe les vraies limites, avec un message lisible.
@@ -55,13 +54,16 @@ def create_app(
     identify_sighting: SightingIdentification,
     clock: Callable[[], datetime] = _utc_now,
     send_feedback: SendFeedback | None = None,
+    *,
+    static_dir: Path,
 ) -> FastAPI:
+    """`static_dir` est le dossier de la page construite, servi sous /static ; il doit exister."""
     app = FastAPI(title="Là-haut")
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     @app.get("/", include_in_schema=False)
     def web_page() -> FileResponse:
-        return FileResponse(STATIC_DIR / "index.html")
+        return FileResponse(static_dir / "index.html")
 
     @app.get("/health", include_in_schema=False)
     def health() -> dict:

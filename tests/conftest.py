@@ -2,6 +2,17 @@
 
 from collections import Counter
 
+import pytest
+
+from tests.support.static_page import a_static_dir
+
+
+@pytest.fixture
+def static_dir(tmp_path):
+    """Le dossier d'une page factice, servi par le site sous /static."""
+    return a_static_dir(tmp_path / "static")
+
+
 PYRAMID_TARGETS = {"unit": 80, "integration": 13, "functional": 7}
 
 

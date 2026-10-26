@@ -13,6 +13,7 @@ from playwright.sync_api import expect, sync_playwright
 from pytest_bdd import given, parsers, then, when
 
 from la_haut.application.send_feedback import SendFeedback
+from la_haut.composition import STATIC_DIR
 from la_haut.domain.observer import Observer
 from la_haut.domain.sighting import Sighting
 from la_haut.domain.time_window import TimeWindow
@@ -164,6 +165,7 @@ def opens(visit, site, visible_passes_listing, sighting_identification, send_fee
             sighting_identification,
             clock=lambda: visit.now,
             send_feedback=send_feedback,
+            static_dir=STATIC_DIR,
         )
         site.serves(app)
         return visit.opens(path)

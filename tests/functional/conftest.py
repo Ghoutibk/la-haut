@@ -118,12 +118,13 @@ def it_was_the_planet(identification, planet_name):
 
 
 @when(parsers.parse("j'ouvre « Ce soir » le {moment}"), target_fixture="tonight")
-def open_tonight(observer, celestrak, cache_path, moment):
+def open_tonight(observer, celestrak, cache_path, moment, static_dir):
     """La page « Ce soir » du site branché sur CelesTrak, telle qu'elle s'ouvre à ce moment-là."""
     site = create_app(
         build_list_visible_passes_from_celestrak(cache_path, url_template=celestrak.url_template),
         build_identify_sighting_from_celestrak(cache_path, url_template=celestrak.url_template),
         clock=lambda: paris_instant_from_hour_text(moment),
+        static_dir=static_dir,
     )
     where = {"latitude": observer.latitude_deg, "longitude": observer.longitude_deg}
     return TestClient(site).get("/api/passes", params=where)
