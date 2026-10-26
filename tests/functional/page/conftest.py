@@ -3,6 +3,7 @@
 Le site tourne sur un port libre de localhost, branché sur les doublures de `tests/support`.
 """
 
+import os
 import re
 from dataclasses import replace
 from datetime import date, datetime, time, timedelta
@@ -71,9 +72,16 @@ NORAD_IDS = {
 
 @pytest.fixture(scope="session")
 def chrome():
-    """Le Google Chrome installé sur la machine, sans fenêtre : un seul pour toute la session."""
+    """Le Google Chrome installé sur la machine, sans fenêtre : un seul pour toute la session.
+
+    Là où Google Chrome ne s'installe pas, `LA_HAUT_BROWSER_EXECUTABLE` désigne un Chromium.
+    """
+    executable = os.environ.get("LA_HAUT_BROWSER_EXECUTABLE")
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(channel="chrome", headless=True)
+        if executable:
+            browser = playwright.chromium.launch(executable_path=executable, headless=True)
+        else:
+            browser = playwright.chromium.launch(channel="chrome", headless=True)
         yield browser
         browser.close()
 
