@@ -50,6 +50,7 @@ from tests.support.visit import (
     a_group,
     a_tab,
     a_view,
+    an_answer,
     an_iphone,
     ask_to_identify,
     choose_the_direction,
@@ -428,7 +429,4 @@ def la_haut_searches_what_was_there(sighting_identification, direction, day, clo
 @then(parsers.parse("la réponse « {title} » est annoncée sans m'interrompre"))
 def the_answer_is_announced_politely(page, title):
     """Le titre de la réponse est dans une région vivante, lue quand le lecteur d'écran se tait."""
-    live_region = page.get_by_role("heading", name=title, exact=True).locator(
-        "xpath=ancestor::*[@aria-live][1]"
-    )
-    expect(live_region).to_have_attribute("aria-live", "polite")
+    expect(an_answer(page, title)).to_have_attribute("aria-live", "polite")
