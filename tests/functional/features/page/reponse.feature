@@ -76,3 +76,8 @@ Fonctionnalité: Lire sur la page ce qu'était la lumière
     Et la réponse dit « Aucune planète brillante n'était dans cette direction à ce moment. »
     Et la réponse dit « Le catalogue des satellites est indisponible pour le moment : seules les planètes ont été vérifiées. Réessaie plus tard pour savoir si c'était un satellite. »
     Et la réponse propose « Ce n'était pas ça ? Dis-le-nous »
+
+  Scénario: Sur un téléphone, la réponse arrive à l'écran
+    Étant donné que je visite Là-haut sur un téléphone Android
+    Quand je signale une lumière vue à l'instant, direction « Nord »
+    Alors je vois toute la réponse « Ni satellite ni planète », au-dessus des onglets
