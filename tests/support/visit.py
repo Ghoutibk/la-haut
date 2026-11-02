@@ -186,6 +186,13 @@ def a_group(page: Page, legend: str):
     return page.get_by_role("group", name=legend, exact=True)
 
 
+def an_answer(page: Page, title: str):
+    """La carte d'une réponse, trouvée par son titre : la région vivante qui l'annonce."""
+    return page.get_by_role("heading", name=title, exact=True).locator(
+        "xpath=ancestor::*[@aria-live][1]"
+    )
+
+
 def choose_the_direction(page: Page, direction: str) -> None:
     a_group(page, "Dans quelle direction ?").get_by_role(
         "button", name=direction, exact=True

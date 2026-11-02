@@ -1,29 +1,6 @@
-from pytest_bdd import given, parsers, scenarios, then, when
-
-from tests.support.visit import (
-    ANDROID,
-    ANDROID_WITHOUT_ABSOLUTE_EVENT,
-    COMPUTER,
-    PHONE_WITHOUT_COMPASS,
-    an_iphone,
-)
+from pytest_bdd import parsers, scenarios, then, when
 
 scenarios("page/viser.feature")
-
-DEVICES = {
-    "sur un ordinateur": COMPUTER,
-    "sur un téléphone sans boussole": PHONE_WITHOUT_COMPASS,
-    "sur un téléphone Android": ANDROID,
-    "sur un téléphone Android sans orientation absolue": ANDROID_WITHOUT_ABSOLUTE_EVENT,
-    "sur un iPhone, et que j'autorise l'accès à la boussole": an_iphone("granted"),
-    "sur un iPhone, et que je refuse l'accès à la boussole": an_iphone("denied"),
-    "sur un iPhone, et que la demande d'accès à la boussole échoue": an_iphone("fails"),
-}
-
-
-@given(parsers.parse("je visite Là-haut {device}"))
-def i_visit_la_haut_on(visit, device):
-    visit.device = DEVICES[device]
 
 
 @when(parsers.parse("mon téléphone pointe vers {heading:g}°"))

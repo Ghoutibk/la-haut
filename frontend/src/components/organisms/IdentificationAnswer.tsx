@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 import { AnswerCard } from "../atoms/AnswerCard";
 import { Eyebrow } from "../atoms/Eyebrow";
 import { Sentence } from "../atoms/Sentence";
@@ -12,8 +14,15 @@ interface IdentificationAnswerProps {
 }
 
 export function IdentificationAnswer({ answer, onFeedback }: IdentificationAnswerProps) {
+  const card = useRef<HTMLDivElement>(null);
+
+  // Sur un téléphone, la réponse arrive sous le bouton : la page défile juste assez pour la montrer.
+  useEffect(() => {
+    if (answer !== null) card.current?.scrollIntoView({ block: "nearest" });
+  }, [answer]);
+
   return (
-    <AnswerCard>
+    <AnswerCard ref={card}>
       {answer !== null && (
         <>
           <Eyebrow flush>{answer.eyebrow}</Eyebrow>
