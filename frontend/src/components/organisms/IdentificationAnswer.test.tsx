@@ -30,6 +30,30 @@ describe("la réponse à « C'était quoi, ça ? »", () => {
     for (const sentence of AN_ANSWER.sentences) expect(screen.getByText(sentence)).toBeVisible();
   });
 
+  it("amène à l'écran chaque réponse qui arrive, juste assez pour la voir", () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, "scrollIntoView");
+    const onFeedback = vi.fn();
+    const { container, rerender } = render(
+      <IdentificationAnswer answer={null} onFeedback={onFeedback} />,
+    );
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    rerender(<IdentificationAnswer answer={AN_ANSWER} onFeedback={onFeedback} />);
+    rerender(<IdentificationAnswer answer={AN_ANSWER} onFeedback={onFeedback} />);
+    rerender(
+      <IdentificationAnswer answer={{ ...AN_ANSWER, title: "Jupiter" }} onFeedback={onFeedback} />,
+    );
+
+    expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    expect(scrollIntoView).toHaveBeenNthCalledWith(1, { block: "nearest" });
+    expect(scrollIntoView).toHaveBeenNthCalledWith(2, { block: "nearest" });
+    expect(scrollIntoView.mock.contexts).toEqual([
+      container.firstElementChild,
+      container.firstElementChild,
+    ]);
+    scrollIntoView.mockRestore();
+  });
+
   it("propose de dire que ce n'était pas ça", async () => {
     const onFeedback = vi.fn();
     render(<IdentificationAnswer answer={AN_ANSWER} onFeedback={onFeedback} />);

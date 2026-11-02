@@ -15,6 +15,11 @@ HTMLDialogElement.prototype.close = function close(this: HTMLDialogElement) {
   this.dispatchEvent(new Event("close"));
 };
 
+// jsdom ne fait jamais défiler la page : un élément peut demander à venir à l'écran, rien ne bouge.
+Element.prototype.scrollIntoView = function scrollIntoView() {
+  // Rien à faire défiler.
+};
+
 // jsdom ne sait rien de l'écran : par défaut, celui d'un ordinateur, avec une souris.
 window.matchMedia = ((query: string) => ({
   matches: query === "(pointer: fine)",
